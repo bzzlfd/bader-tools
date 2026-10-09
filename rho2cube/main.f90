@@ -5,26 +5,43 @@
 !
 ! usage:
 !   convert_rho2cube.x -a atom.config -r OUT.RHO 0.5 -r OUT.RHO2 0.5 -o out.cube
+!   convert_rho2cube.x -a atom.config -r OUT.RHO -o out.cube \
+!                      -c 11 Na.corecharge 10 -c 17 Cl.corecharge 10
+!
+! each -c Z FILE [QCORE] adds the all-electron core charge of species Z,
+! read from a table file, around every atom of that atomic number
+! and writes the valence + core density as an additional reference
+! cube (out.ref.cube) for "bader out.cube -ref out.ref.cube".
 ! ------------------------------------------------------------------
 program convert_rho2cube
    use iso_fortran_env, only: error_unit, output_unit
+   use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
    use utils_mod
    use pwmat_io_mod
    use cube_mod
+   use corecharge_mod
    implicit none
 
    integer, parameter :: MAXRHO = 64
+   integer, parameter :: MAXCC = 16
+   real(dp), parameter :: qcore_abs_tol = 0.001_dp ! e/atom
+   real(dp), parameter :: qcore_rel_tol = 0.001_dp ! 0.1% of expected charge
 
    character(len=4096) :: atomfile, outfile, arg
    character(len=4096) :: rhofile(MAXRHO)
+   character(len=4096) :: ccfile(MAXCC), reffile
    character(len=32768) :: comment2, tmps
-   real(dp) :: weight(MAXRHO)
-   integer :: nrho, nargs, i, u, ios
-   real(dp) :: sumw, wval, cellvol_bohr
+   character(len=256) :: charge_message
+   real(dp) :: weight(MAXRHO), expected_qcore(MAXCC)
+   integer :: nrho, ncc, nargs, i, k, u, ios, zval
+   integer :: ccz(MAXCC), nat
+   real(dp) :: sumw, wval, cellvol_bohr, qsum, qval
    logical :: have_a, have_o, exists
+   logical :: have_expected_qcore(MAXCC)
    character(len=16) :: ans
    type(atom_config_t) :: atoms
    type(rho_meta_t) :: meta, meta_i
+   type(corecharge_t) :: cc(MAXCC)
    real(dp), allocatable :: rho(:), buf(:)
 
    nargs = command_argument_count()
@@ -37,6 +54,8 @@ program convert_rho2cube
    have_a = .false.
    have_o = .false.
    nrho = 0
+   ncc = 0
+   have_expected_qcore = .false.
    i = 1
    do while (i <= nargs)
       call get_command_argument(i, arg)
@@ -52,6 +71,26 @@ program convert_rho2cube
          if (have_o) call die('option -o given more than once')
          call next_str(i, outfile)
          have_o = .true.
+      case ('-c', '--core-charge')
+         ncc = ncc + 1
+         if (ncc > MAXCC) call die('too many -c/--core-charge options')
+         call next_str(i, arg)
+         read(arg, *, iostat=ios) zval
+         if (ios /= 0 .or. zval <= 0) &
+            call die('option -c needs an integer atomic number, got "'&
+                     //trim(arg)//'"')
+         ccz(ncc) = zval
+         call next_str(i, ccfile(ncc))
+         if (i + 1 <= nargs) then          ! optional expected charge per atom
+            call get_command_argument(i + 1, arg)
+            if (parse_real(trim(arg), wval)) then
+               if (.not. ieee_is_finite(wval) .or. wval < 0.0_dp) &
+                  call die('expected core charge must be finite and nonnegative')
+               expected_qcore(ncc) = wval
+               have_expected_qcore(ncc) = .true.
+               i = i + 1
+            end if
+         end if
       case ('-r')
          nrho = nrho + 1
          if (nrho > MAXRHO) call die('too many -r files')
@@ -73,18 +112,41 @@ program convert_rho2cube
    if (.not. have_a) call die('missing required option -a <atom.config>')
    if (nrho == 0) call die('missing required option -r <OUT.RHO>')
    if (.not. have_o) call die('missing required option -o <output.cube>')
+   do i = 1, ncc
+      do u = i + 1, ncc
+         if (ccz(u) == ccz(i)) then
+            write(tmps, '(a,i0)') 'option -c/--core-charge given more than once for species ', ccz(i)
+            call die(trim(tmps))
+         end if
+      end do
+   end do
+   if (ncc > 0) then
+      reffile = trim(outfile)
+      if (len_trim(reffile) > 5) then
+         if (reffile(len_trim(reffile)-4:len_trim(reffile)) == '.cube') &
+            reffile = reffile(1:len_trim(reffile)-5)
+      end if
+      reffile = trim(reffile)//'.ref.cube'
+   end if
 
    ! ------------------- refuse to clobber a file ----------------------
-   inquire(file = trim(outfile), exist = exists)
-   if (exists) then
-      write(*, '(a)', advance = 'no') &
-         'output file exists: '//trim(outfile)//'   overwrite? [y/N] '
-      read(*, '(a)', iostat = ios) ans
-      if (ios /= 0 .or. (ans(1:1) /= 'y' .and. ans(1:1) /= 'Y')) then
-         write(*, '(a)') 'not overwriting, exit.'
-         stop
+   do i = 1, merge(2, 1, ncc > 0)
+      if (i == 1) then
+         arg = trim(outfile)
+      else
+         arg = trim(reffile)
       end if
-   end if
+      inquire(file = trim(arg), exist = exists)
+      if (exists) then
+         write(*, '(a)', advance = 'no') &
+            'output file exists: '//trim(arg)//'   overwrite? [y/N] '
+         read(*, '(a)', iostat = ios) ans
+         if (ios /= 0 .or. (ans(1:1) /= 'y' .and. ans(1:1) /= 'Y')) then
+            write(*, '(a)') 'not overwriting, exit.'
+            stop
+         end if
+      end if
+   end do
 
    ! ------------------------- structure -------------------------------
    write(*, '(/,a)') '== atom.config: '//trim(atomfile)//' =='
@@ -145,16 +207,75 @@ program convert_rho2cube
    write(tmps, '(a,es10.3,a)') '   (weights sum = ', sumw, ', normalized)'
    comment2 = trim(comment2)//tmps
 
+   ! --------------------- core charge tables --------------------------
+   if (ncc > 0) then
+      write(*, '(/,a)') '== core charge correction (-c/--core-charge) =='
+      do i = 1, ncc
+         call read_corecharge(trim(ccfile(i)), ccz(i), cc(i))
+         nat = count(atoms%itype == ccz(i))
+         if (nat == 0) then
+            write(tmps, '(a,i0)') 'no atom with Z = ', ccz(i)
+            call die(trim(tmps)//' in '//trim(atomfile))
+         end if
+         write(*, '(a,i0,a)') '  Z = ', ccz(i), ' from '//trim(ccfile(i))
+         write(*, '(a,i0,a,i0,a,f8.3,a,f6.3,a)') &
+            '        ', nat, ' atoms;  table ', cc(i)%n, &
+            ' pts, rmax = ', cc(i)%rmax, ' bohr (', &
+            cc(i)%rmax*bohr_ang, ' angstrom)'
+         write(*, '(a,f10.6,a)') '        4*pi*int rho_core*r^2 dr = ', cc(i)%qcore, &
+            ' e/atom  (expected Z_core = Z - z_valence)'
+         if (have_expected_qcore(i)) then
+            write(*, '(a,f10.6,a)') '        expected core charge = ', expected_qcore(i), ' e/atom'
+            if (abs(cc(i)%qcore - expected_qcore(i)) > max(qcore_abs_tol, qcore_rel_tol*expected_qcore(i))) then
+               write(charge_message, '(a,f12.6,a,f12.6,a)') &
+                  'core charge integral = ', cc(i)%qcore, ', expected = ', expected_qcore(i), &
+                  ' e/atom; difference exceeds max(0.001 e/atom, 0.1% of expected)'
+               flush(output_unit)  ! report the values before the warning on stderr
+               call warn(trim(ccfile(i))//': '//trim(charge_message))
+            end if
+         end if
+         write(*, '(a)') '        tail:  r [bohr]    rho_core [e/bohr^3]'&
+                        //'    drho_core/dr [e/bohr^4]'
+         do k = max(2, cc(i)%n - 2), cc(i)%n
+            write(*, '(14x,f10.4,2es14.3)') cc(i)%r(k), cc(i)%rho_core(k), &
+               (cc(i)%rho_core(k) - cc(i)%rho_core(k-1))/(cc(i)%r(k) - cc(i)%r(k-1))
+         end do
+      end do
+   end if
+
    write(*, '(/,a)') '== output =='
    call write_cube(trim(outfile), atoms, meta, rho, trim(comment2))
 
    cellvol_bohr = cell_volume(meta%AL) / bohr_ang**3
+   qval = sum(rho)*cellvol_bohr/real(size(rho), dp)
    write(*, '(a)') '  written: '//trim(outfile)
    write(*, '(a,f14.8,a)') &
-      '  integral of the mixed density over the cell = ', &
-      sum(rho)*cellvol_bohr/real(size(rho), dp), ' e'
+      '  integral of the mixed density over the cell = ', qval, ' e'
    write(*, '(a,f12.8,a,f12.8)') &
       '  density min = ', minval(rho), '   max = ', maxval(rho)
+
+   ! ------------- reference cube: valence + core charge ---------------
+   if (ncc > 0) then
+      do i = 1, ncc
+         call superimpose_corecharge(cc(i), atoms, meta, rho)
+      end do
+      comment2 = 'valence + core charge: '
+      do i = 1, ncc
+         write(tmps, '(a,i0,a,i0,a)') &
+            'Z=', ccz(i), ' (', count(atoms%itype == ccz(i)), ' atoms) from '
+         comment2 = trim(comment2)//trim(tmps)//trim(ccfile(i))
+         if (i < ncc) comment2 = trim(comment2)//'; '
+      end do
+      call write_cube(trim(reffile), atoms, meta, rho, trim(comment2))
+      qsum = sum(rho)*cellvol_bohr/real(size(rho), dp)
+      write(*, '(a)') '  written: '//trim(reffile)
+      write(*, '(a,f14.8,a)') &
+         '  integral of valence + core density   = ', qsum, ' e'
+      write(*, '(a,f14.8,a)') &
+         '  core charge added on the grid        = ', qsum - qval, ' e'
+      write(*, '(a,f12.8,a,f12.8)') &
+         '  reference density min = ', minval(rho), '   max = ', maxval(rho)
+   end if
 
 contains
 
@@ -189,6 +310,7 @@ contains
          '', &
          'usage:', &
          '  convert_rho2cube.x -a ATOMCONFIG -r RHOPATH [WEIGHT] ... -o OUTPUT.cube', &
+         '                     [-c Z CORECHARGE [QCORE] ...]', &
          '', &
          'options:', &
          '  -a PATH       atom.config file: lattice and atom positions (angstrom)', &
@@ -196,10 +318,24 @@ contains
          '                repeatable. All files must share the same grid.', &
          '                The mixture is normalized by the sum of weights.', &
          '  -o PATH       output cube file (bohr units)', &
+         '  -c, --core-charge Z PATH [QCORE]', &
+         '                core charge correction for species with atomic', &
+         '                number Z: PATH is a .corecharge table (see', &
+         '                tools/upf2corecharge.sh; two columns r [bohr] and', &
+         '                rho_core [e/bohr^3], without a 4*pi factor).', &
+         '                The interpolated rho_core is', &
+         '                added around every Z atom and the valence + core', &
+         '                density is written as an extra OUTPUT.ref.cube for', &
+         '                "bader OUTPUT.cube -ref OUTPUT.ref.cube". Repeatable.', &
+         '                QCORE optionally specifies the expected core charge', &
+         '                per atom (>= 0). Warn if the table integral differs', &
+         '                by more than max(0.001 e/atom, 0.1% of QCORE).', &
          '  -h            print this help', &
          '', &
          'example:', &
-         '  convert_rho2cube.x -a atom.config -r OUT.RHO 0.5 -r OUT.RHO2 0.5 -o xxx.cube'
+         '  convert_rho2cube.x -a atom.config -r OUT.RHO 0.5 -r OUT.RHO2 0.5 -o xxx.cube', &
+         '  convert_rho2cube.x -a atom.config -r OUT.RHO -o NaCl.cube &' &
+         //' -c 11 Na.corecharge 10 -c 17 Cl.corecharge 10'
    end subroutine print_help
 
 end program convert_rho2cube
