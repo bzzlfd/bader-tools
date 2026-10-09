@@ -6,7 +6,7 @@ module utils_mod
    use iso_fortran_env, only: error_unit, output_unit
    implicit none
    private
-   public :: dp, bohr_ang, die, warn, parse_real
+   public :: dp, bohr_ang, die, warn, parse_real, cross_product, cell_volume
 
    integer, parameter :: dp = selected_real_kind(15, 307)
 
@@ -14,6 +14,21 @@ module utils_mod
    real(dp), parameter :: bohr_ang = 0.529177239_dp
 
 contains
+
+   pure function cross_product(a, b) result(c)
+      real(dp), intent(in) :: a(3), b(3)
+      real(dp) :: c(3)
+      c = [a(2)*b(3) - a(3)*b(2), &
+           a(3)*b(1) - a(1)*b(3), &
+           a(1)*b(2) - a(2)*b(1)]
+   end function cross_product
+
+   pure function cell_volume(AL) result(volume)
+      ! AL(:,i) is lattice vector a_i; volume has units of AL cubed.
+      real(dp), intent(in) :: AL(3,3)
+      real(dp) :: volume
+      volume = abs(dot_product(AL(:,1), cross_product(AL(:,2), AL(:,3))))
+   end function cell_volume
 
    subroutine die(msg)
       character(*), intent(in) :: msg

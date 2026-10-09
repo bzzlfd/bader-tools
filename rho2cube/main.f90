@@ -91,7 +91,7 @@ program convert_rho2cube
    call read_atom_config(trim(atomfile), atoms)
    write(*, '(a,i0,a)') '  ', atoms%natom, ' atoms, lattice (angstrom):'
    do i = 1, 3
-      write(*, '(3f14.8)') atoms%AL(i,:)
+      write(*, '(3f14.8)') atoms%AL(:,i)
    end do
 
    ! --------------------- OUT.RHO: weighted mix -----------------------
@@ -148,7 +148,7 @@ program convert_rho2cube
    write(*, '(/,a)') '== output =='
    call write_cube(trim(outfile), atoms, meta, rho, trim(comment2))
 
-   cellvol_bohr = abs(triple(meta%AL(1,:), meta%AL(2,:), meta%AL(3,:))) / bohr_ang**3
+   cellvol_bohr = cell_volume(meta%AL) / bohr_ang**3
    write(*, '(a)') '  written: '//trim(outfile)
    write(*, '(a,f14.8,a)') &
       '  integral of the mixed density over the cell = ', &
@@ -181,18 +181,6 @@ contains
          maxval(abs(meta%AL - meta_i%AL))
       call die('metadata of '//trim(rhofile(k))//' differs from '//trim(rhofile(1)))
    end subroutine report_meta_mismatch
-
-   function triple(a, b, c) result(t)
-      real(dp), intent(in) :: a(3), b(3), c(3)
-      real(dp) :: t
-      t = dot_product(a, cross(b, c))
-   end function triple
-
-   function cross(a, b) result(c)
-      real(dp), intent(in) :: a(3), b(3)
-      real(dp) :: c(3)
-      c = [ a(2)*b(3) - a(3)*b(2), a(3)*b(1) - a(1)*b(3), a(1)*b(2) - a(2)*b(1) ]
-   end function cross
 
    subroutine print_help()
       write(*, '(a)') &

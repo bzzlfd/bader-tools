@@ -38,11 +38,11 @@ contains
       write(u, '(a)') trim(comment2)
       write(u, '(I5,3F12.6,I5)') atoms%natom, 0.0_dp, 0.0_dp, 0.0_dp, 1
       do i = 1, 3
-         voxel = meta%AL(i,:) / real(meta%n(i), dp) / bohr_ang
+         voxel = meta%AL(:,i) / real(meta%n(i), dp) / bohr_ang
          write(u, '(I5,3F12.6)') meta%n(i), voxel
       end do
       do i = 1, atoms%natom
-         r = matmul(atoms%xfrac(i,:), meta%AL) / bohr_ang
+         r = matmul(meta%AL, atoms%xfrac(i,:)) / bohr_ang
          write(u, '(I5,F12.6,3F12.6)') atoms%itype(i), 0.0_dp, r
       end do
       do i = 1, meta%n(1)

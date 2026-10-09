@@ -16,7 +16,8 @@
 !                        short read list skips the record remainder,
 !                        so reading 4 values handles both variants)
 !    record 2          : 9 float64 lattice vectors, angstrom,
-!                        row i = a_i
+!                        a1x, a1y, a1z, a2x, a2y, a2z, a3x, a3y, a3z
+!                        (stored in memory as AL(:,i) = a_i)
 !    records 3-...     : nnodes records of float64 grid data; each
 !                        record holds at least nr = n1*n2*n3/nnodes
 !                        values (may be padded); the first nr values
@@ -35,7 +36,7 @@ module pwmat_io_mod
 
    type :: atom_config_t
       integer :: natom = 0
-      real(dp) :: AL(3,3) = 0.0_dp         ! rows = lattice vectors, angstrom
+      real(dp) :: AL(3,3) = 0.0_dp         ! columns = lattice vectors, angstrom
       integer, allocatable :: itype(:)     ! atomic numbers
       real(dp), allocatable :: xfrac(:,:)  ! (natom, 3), fractional
    end type atom_config_t
@@ -44,7 +45,7 @@ module pwmat_io_mod
       integer :: n(3) = 0                  ! grid n1, n2, n3
       integer :: nnodes = 0
       integer :: nr = 0                    ! grid values per node record
-      real(dp) :: AL(3,3) = 0.0_dp         ! rows = lattice vectors, angstrom
+      real(dp) :: AL(3,3) = 0.0_dp         ! columns = lattice vectors, angstrom
    end type rho_meta_t
 
 contains
@@ -64,10 +65,10 @@ contains
       integer, intent(in) :: u
       character(*), intent(in) :: filename
       type(rho_meta_t), intent(out) :: meta
-      integer :: ios, i, j
+      integer :: ios
       read(u, iostat=ios) meta%n(1), meta%n(2), meta%n(3), meta%nnodes
       if (ios /= 0) call die('reading grid header failed: '//trim(filename))
-      read(u, iostat=ios) ((meta%AL(i,j), j = 1, 3), i = 1, 3)
+      read(u, iostat=ios) meta%AL
       if (ios /= 0) call die('reading lattice failed: '//trim(filename))
       if (any(meta%n <= 0) .or. meta%nnodes <= 0) &
          call die('unphysical grid in '//trim(filename))
@@ -94,7 +95,7 @@ contains
       read(u, *, iostat=ios)                              ! "LATTICE" line
       if (ios /= 0) call die('unexpected end of '//trim(filename))
       do i = 1, 3
-         read(u, *, iostat=ios) atoms%AL(i,:)
+         read(u, *, iostat=ios) atoms%AL(:,i)
          if (ios /= 0) call die('bad lattice line in '//trim(filename))
       end do
       read(u, *, iostat=ios)                              ! "POSITION" line
