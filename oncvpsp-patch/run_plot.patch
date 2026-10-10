@@ -4,7 +4,11 @@
 # core charge density on the original radial mesh,
 # with redundant trailing zeros removed.
 #
-# Run from the ONCVPSP source root (containing src/run_plot.f90).
+# Cover both run_plot and run_plot_r.
+# Retain ONCVPSP's normalization:
+#     integral rhoc(r)*r^2 dr = number of core electrons.
+#
+# Run from the ONCVPSP source root (containing src/run_plot*.f90).
 # Place run_plot.patch there, or use its full path below. Choose one method:
 #   patch --dry-run -p1 < run_plot.patch      # Check; -p1 strips a/ and b/
 #   patch -p1 < run_plot.patch                # Apply
@@ -27,6 +31,41 @@ index d410a5f71da7df8b021c0340dbec6608910aa80a..22992fb721e131dc4208b13a0b75a50d
   real(dp) :: r0,dr
   real(dp), allocatable :: uu(:),u2(:),up(:)
 @@ -125,6 +125,20 @@
+    end if
+  end do
+ 
++! raw core charge on every original mesh point, tag '!R'
++! include one zero after the last positive density, if available
++! a zero core density produces a single zero at the innermost point
++ ncore_end=1
++ do ii=mmax,1,-1
++   if(rhoc(ii)>0.0d0) then
++     ncore_end=min(ii+1,mmax)
++     exit
++   end if
++ end do
++ do ii=1,ncore_end
++   write(6,'(a,1x,1p,2e22.14)') '!R',rr(ii),rhoc(ii)
++ end do
++
+ ! loop for wave function output
+ 
+  do l1 = 1, lmax + 1
+
+diff --git a/src/run_plot_r.f90 b/src/run_plot_r.f90
+index 7ae16442cef607b73e0ed102df4dcd3e8bc94e76..2a71fb0d0183c6fded8b2f2292145d8e40766880 100644
+--- a/src/run_plot_r.f90
++++ b/src/run_plot_r.f90
+@@ -63,7 +63,7 @@
+ 
+ !Local variables
+  integer :: ll,l1,ii,jj,ierr,mch,mchf,n1,n2,n3,n4,nn,nnae
+- integer :: iprj,nnp,npr
++ integer :: iprj,nnp,npr,ncore_end
+  integer :: ikap,kap,mkap
+  real(dp) :: al,cnorm,emax,emin,etest,sls,rmx,sgnae,sgnps
+  real(dp) :: r0,dr
+@@ -126,6 +126,20 @@
     end if
   end do
  
