@@ -5,10 +5,10 @@
 !
 ! usage:
 !   convert_rho2cube.x -a atom.config -r OUT.RHO 0.5 -r OUT.RHO2 0.5 -o out.cube
-!   convert_rho2cube.x -a atom.config -r OUT.RHO -o out.cube \
-!                      -c 11 Na.corecharge 10 -c 17 Cl.corecharge 10
+!   convert_rho2cube.x --atom atom.config --rho OUT.RHO -o out.cube \
+!                      --core-rho 11 Na.corecharge 10 --core-rho 17 Cl.corecharge 10
 !
-! each -c Z FILE [QCORE] adds the all-electron core charge of species Z,
+! each -c/--core-rho Z FILE [QCORE] adds the all-electron core charge of species Z,
 ! read from a table file, around every atom of that atomic number
 ! and writes the valence + core density as an additional reference
 ! cube (out.ref.cube) for "bader out.cube -ref out.ref.cube".
@@ -63,21 +63,21 @@ program convert_rho2cube
       case ('-h', '--help')
          call print_help()
          stop
-      case ('-a')
-         if (have_a) call die('option -a given more than once')
+      case ('-a', '--atom')
+         if (have_a) call die('option -a/--atom given more than once')
          call next_str(i, atomfile)
          have_a = .true.
       case ('-o')
          if (have_o) call die('option -o given more than once')
          call next_str(i, outfile)
          have_o = .true.
-      case ('-c', '--core-charge')
+      case ('-c', '--core-rho')
          ncc = ncc + 1
-         if (ncc > MAXCC) call die('too many -c/--core-charge options')
+         if (ncc > MAXCC) call die('too many -c/--core-rho options')
          call next_str(i, arg)
          read(arg, *, iostat=ios) zval
          if (ios /= 0 .or. zval <= 0) &
-            call die('option -c needs an integer atomic number, got "'&
+            call die('option -c/--core-rho needs an integer atomic number, got "'&
                      //trim(arg)//'"')
          ccz(ncc) = zval
          call next_str(i, ccfile(ncc))
@@ -91,9 +91,9 @@ program convert_rho2cube
                i = i + 1
             end if
          end if
-      case ('-r')
+      case ('-r', '--rho')
          nrho = nrho + 1
-         if (nrho > MAXRHO) call die('too many -r files')
+         if (nrho > MAXRHO) call die('too many -r/--rho files')
          call next_str(i, rhofile(nrho))
          weight(nrho) = 1.0_dp
          if (i + 1 <= nargs) then          ! optional weight after the path
@@ -109,13 +109,13 @@ program convert_rho2cube
       i = i + 1
    end do
 
-   if (.not. have_a) call die('missing required option -a <atom.config>')
-   if (nrho == 0) call die('missing required option -r <OUT.RHO>')
+   if (.not. have_a) call die('missing required option -a/--atom <atom.config>')
+   if (nrho == 0) call die('missing required option -r/--rho <OUT.RHO>')
    if (.not. have_o) call die('missing required option -o <output.cube>')
    do i = 1, ncc
       do u = i + 1, ncc
          if (ccz(u) == ccz(i)) then
-            write(tmps, '(a,i0)') 'option -c/--core-charge given more than once for species ', ccz(i)
+            write(tmps, '(a,i0)') 'option -c/--core-rho given more than once for species ', ccz(i)
             call die(trim(tmps))
          end if
       end do
@@ -204,7 +204,7 @@ program convert_rho2cube
 
    ! --------------------- core charge tables --------------------------
    if (ncc > 0) then
-      write(*, '(/,a)') '== core charge correction (-c/--core-charge) =='
+      write(*, '(/,a)') '== core charge correction (-c/--core-rho) =='
       do i = 1, ncc
          call read_corecharge(trim(ccfile(i)), ccz(i), cc(i))
          nat = count(atoms%itype == ccz(i))
@@ -307,17 +307,19 @@ contains
          '                     [-c Z CORECHARGE [QCORE] ...]', &
          '', &
          'options:', &
-         '  -a PATH       atom.config file: lattice and atom positions (angstrom)', &
-         '  -r PATH [W]   OUT.RHO file with optional weight W (default 1);', &
+         '  -a, --atom PATH', &
+         '                atom.config file: lattice and atom positions (angstrom)', &
+         '  -r, --rho PATH [W]', &
+         '                OUT.RHO file with optional weight W (default 1);', &
          '                repeatable. All files must share the same grid.', &
          '                The output is the direct weighted sum W1*rho1 +', &
          '                W2*rho2 + ...; no normalization by the weight sum', &
          '                (negative weights give density differences).', &
          '  -o PATH       output cube file (bohr units)', &
-         '  -c, --core-charge Z PATH [QCORE]', &
+         '  -c, --core-rho Z PATH [QCORE]', &
          '                core charge correction for species with atomic', &
          '                number Z: PATH is a .corecharge table (see', &
-         '                tools/upf2corecharge.sh; two columns r [bohr] and', &
+         '                tool/upf2corecharge.sh; two columns r [bohr] and', &
          '                rho_core [e/bohr^3], without a 4*pi factor).', &
          '                The interpolated rho_core is', &
          '                added around every Z atom and the valence + core', &
@@ -330,8 +332,8 @@ contains
          '', &
          'example:', &
          '  convert_rho2cube.x -a atom.config -r OUT.RHO 0.5 -r OUT.RHO2 0.5 -o xxx.cube', &
-         '  convert_rho2cube.x -a atom.config -r OUT.RHO -o NaCl.cube &' &
-         //' -c 11 Na.corecharge 10 -c 17 Cl.corecharge 10'
+         '  convert_rho2cube.x --atom atom.config --rho OUT.RHO -o NaCl.cube &' &
+         //' --core-rho 11 Na.corecharge 10 --core-rho 17 Cl.corecharge 10'
    end subroutine print_help
 
 end program convert_rho2cube
