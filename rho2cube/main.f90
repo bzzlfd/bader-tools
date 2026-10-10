@@ -288,19 +288,19 @@ contains
       call get_command_argument(ix, str)
    end subroutine next_str
 
-   subroutine report_meta_mismatch(k)
-      integer, intent(in) :: k
+   subroutine report_meta_mismatch(ifile)
+      integer, intent(in) :: ifile
       flush(output_unit)
       write(error_unit, '(a)') 'ERROR: OUT.RHO metadata mismatch:'
       write(error_unit, '(a,i0,a,i0,a,i0,a,i0)') &
          '  file #1    grid = ', meta%n(1), ' x ', meta%n(2), ' x ', meta%n(3), &
          ', nnodes = ', meta%nnodes
       write(error_unit, '(a,i0,a,i0,a,i0,a,i0,a,i0,a,i0)') &
-         '  file #', k, '  grid = ', meta_i%n(1), ' x ', meta_i%n(2), ' x ', meta_i%n(3), &
+         '  file #', ifile, '  grid = ', meta_i%n(1), ' x ', meta_i%n(2), ' x ', meta_i%n(3), &
          ', nnodes = ', meta_i%nnodes
       write(error_unit, '(a,es12.4)') '  AL difference (max, angstrom) = ', &
          maxval(abs(meta%AL - meta_i%AL))
-      call die('metadata of '//trim(rhofile(k))//' differs from '//trim(rhofile(1)))
+      call die('metadata of '//trim(rhofile(ifile))//' differs from '//trim(rhofile(1)))
    end subroutine report_meta_mismatch
 
    subroutine print_help()
