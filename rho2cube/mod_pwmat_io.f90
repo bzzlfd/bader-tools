@@ -108,39 +108,48 @@ contains
       close(u)
    end subroutine read_atom_config
 
-   subroutine rho_read_first(u, filename, meta, weight, acc)
+   subroutine rho_read_first(u, filename, meta, weight, acc, rsum)
       ! read the data records straight into the accumulator, then
       ! scale:  acc = weight * rho.
       ! acc must have exactly n1*n2*n3 elements; it is fully
       ! overwritten, so no second grid-sized array is needed.
+      ! rsum returns the plain (unweighted) sum of all grid values,
+      ! for the file's density integral.
       integer, intent(in) :: u
       character(*), intent(in) :: filename
       type(rho_meta_t), intent(in) :: meta
       real(dp), intent(in) :: weight
       real(dp), intent(out) :: acc(:)
+      real(dp), intent(out) :: rsum
       integer :: i, off, ios
+      rsum = 0.0_dp
       do i = 1, meta%nnodes
          off = (i-1)*meta%nr
          read(u, iostat=ios) acc(off+1 : off+meta%nr)
          if (ios /= 0) call die('reading data record failed: '//trim(filename))
+         rsum = rsum + sum(acc(off+1 : off+meta%nr))
          acc(off+1 : off+meta%nr) = weight * acc(off+1 : off+meta%nr)
       end do
    end subroutine rho_read_first
 
-   subroutine rho_read_add(u, filename, meta, weight, acc, buf)
+   subroutine rho_read_add(u, filename, meta, weight, acc, buf, rsum)
       ! acc = acc + weight * rho, reading through a reusable
-      ! one-record buffer.
+      ! one-record buffer.  rsum returns the plain (unweighted)
+      ! sum of all grid values, for the file's density integral.
       integer, intent(in) :: u
       character(*), intent(in) :: filename
       type(rho_meta_t), intent(in) :: meta
       real(dp), intent(in) :: weight
       real(dp), intent(inout) :: acc(:)
       real(dp), intent(out) :: buf(:)      ! at least meta%nr elements
+      real(dp), intent(out) :: rsum
       integer :: i, off, ios
+      rsum = 0.0_dp
       do i = 1, meta%nnodes
          off = (i-1)*meta%nr
          read(u, iostat=ios) buf(1 : meta%nr)
          if (ios /= 0) call die('reading data record failed: '//trim(filename))
+         rsum = rsum + sum(buf(1 : meta%nr))
          acc(off+1 : off+meta%nr) = acc(off+1 : off+meta%nr) &
                                     + weight * buf(1 : meta%nr)
       end do

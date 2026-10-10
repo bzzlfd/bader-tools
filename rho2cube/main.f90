@@ -35,7 +35,7 @@ program convert_rho2cube
    real(dp) :: weight(MAXRHO), expected_qcore(MAXCC)
    integer :: nrho, ncc, nargs, i, k, u, ios, zval
    integer :: ccz(MAXCC), nat
-   real(dp) :: sumw, wval, cellvol_bohr, qsum, qval
+   real(dp) :: wval, cellvol_bohr, qsum, qval, qfile, rsum
    logical :: have_a, have_o, exists
    logical :: have_expected_qcore(MAXCC)
    character(len=16) :: ans
@@ -157,14 +157,8 @@ program convert_rho2cube
    end do
 
    ! --------------------- OUT.RHO: weighted mix -----------------------
-   ! each file prints its weight, metadata and reading in one block
-   sumw = sum(weight(1:nrho))
-   if (abs(sumw) < 1.0e-30_dp) call die('the weights sum to zero')
+   ! each file prints its weight, metadata, reading and integral
    write(*, '(/,a)') '== OUT.RHO mixture =='
-   write(*, '(a,f14.8)') '  weights sum = ', sumw
-   if (abs(sumw - 1.0_dp) > 1.0e-12_dp) &
-      write(*, '(a,f14.8)') '  normalizing by 1/(weights sum) = ', 1.0_dp/sumw
-   flush(output_unit)
 
    ! first file defines the grid
    write(*, '(a,i0,a,i0,a,f10.6,a,a)') &
@@ -178,8 +172,11 @@ program convert_rho2cube
    if (any(abs(meta%AL - atoms%AL) > 1.0e-5_dp)) &
       call warn('lattice in '//trim(rhofile(1))//' differs from '//trim(atomfile))
    allocate(rho(meta%n(1)*meta%n(2)*meta%n(3)))
-   call rho_read_first(u, trim(rhofile(1)), meta, weight(1), rho)
+   cellvol_bohr = cell_volume(meta%AL) / bohr_ang**3
+   call rho_read_first(u, trim(rhofile(1)), meta, weight(1), rho, rsum)
    close(u)
+   qfile = rsum*cellvol_bohr/real(size(rho), dp)
+   write(*, '(a,f14.8)') '        integral over the cell = ', qfile
 
    ! remaining files: check meta, accumulate
    if (nrho >= 2) allocate(buf(meta%nr))
@@ -191,21 +188,19 @@ program convert_rho2cube
       call read_rho_meta(u, trim(rhofile(i)), meta_i)
       if (.not. meta_same(meta, meta_i)) call report_meta_mismatch(i)
       write(*, '(a)') '        metadata consistent with file #1'
-      call rho_read_add(u, trim(rhofile(i)), meta, weight(i), rho, buf)
+      call rho_read_add(u, trim(rhofile(i)), meta, weight(i), rho, buf, rsum)
       close(u)
+      qfile = rsum*cellvol_bohr/real(size(rho), dp)
+      write(*, '(a,f14.8)') '        integral over the cell = ', qfile
    end do
 
-   ! ----------------- normalize and write the cube --------------------
-   if (abs(sumw - 1.0_dp) > 1.0e-12_dp) rho = rho / sumw
-
+   ! ----------------------- write the cube ----------------------------
    comment2 = 'weighted sum:'
    do i = 1, nrho
       write(tmps, '(a,es10.3,a)') ' ', weight(i), ' * '
       comment2 = trim(comment2)//trim(tmps)//' '//trim(rhofile(i))
       if (i < nrho) comment2 = trim(comment2)//' +'
    end do
-   write(tmps, '(a,es10.3,a)') '   (weights sum = ', sumw, ', normalized)'
-   comment2 = trim(comment2)//tmps
 
    ! --------------------- core charge tables --------------------------
    if (ncc > 0) then
@@ -246,7 +241,6 @@ program convert_rho2cube
    write(*, '(/,a)') '== output =='
    call write_cube(trim(outfile), atoms, meta, rho, trim(comment2))
 
-   cellvol_bohr = cell_volume(meta%AL) / bohr_ang**3
    qval = sum(rho)*cellvol_bohr/real(size(rho), dp)
    write(*, '(a)') '  written: '//trim(outfile)
    write(*, '(a,f14.8,a)') &
@@ -316,7 +310,9 @@ contains
          '  -a PATH       atom.config file: lattice and atom positions (angstrom)', &
          '  -r PATH [W]   OUT.RHO file with optional weight W (default 1);', &
          '                repeatable. All files must share the same grid.', &
-         '                The mixture is normalized by the sum of weights.', &
+         '                The output is the direct weighted sum W1*rho1 +', &
+         '                W2*rho2 + ...; no normalization by the weight sum', &
+         '                (negative weights give density differences).', &
          '  -o PATH       output cube file (bohr units)', &
          '  -c, --core-charge Z PATH [QCORE]', &
          '                core charge correction for species with atomic', &
