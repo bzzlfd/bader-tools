@@ -16,6 +16,17 @@ Use established project locations where they differ. Adapt to the language and b
 
 Read the policy once to understand its structure. Then apply the common safeguards below and the current stage's section. Responsibilities in other stages are deferred, not a checklist to plan or maintain in parallel.
 
+Choose the entry procedure from the assigned task and available evidence:
+
+| Situation | Start here |
+|---|---|
+| New investigation needing a workspace | §2: create and initialize a directory |
+| User started an experiment and asks the agent to take over; policy initialization has not begun | §2: initialize the user's existing directory |
+| Experiment was previously initialized, or initialization was interrupted | §3 Recovery: reconcile actual state, then continue the appropriate stage |
+| User requests workspace review or cleanup | §5: inspect within the requested scope |
+
+Use records, files, and known task history together. A directory name or user-written notes alone do not establish prior policy initialization. If the distinction is unresolved, inspect before changing identity; preserve the existing directory and ask only for information needed to resolve the uncertainty.
+
 | Stage | Focus now | Transition |
 |---|---|---|
 | Initialization (§2) | Establish the question, workspace, inputs, and minimal recovery context | Begin work when the first meaningful experimental action can start |
@@ -39,9 +50,9 @@ Apply these throughout the lifecycle:
 
 ### Record Only What the Experiment Needs
 
-Every independent experiment directory needs minimal local context: its purpose and whether it contains original inputs, identifying their source or marking it unknown. A line in an existing script or log may suffice; create a small record only if needed. A trivial disposable check can leave its command and outcome in the task report. Do not create metadata, README, and journal files merely to complete a template.
+Every independent experiment directory needs minimal local context: its purpose and whether it contains original inputs, identifying their source or marking it unknown. A line in an existing script or log may suffice; create a small record only if needed. A trivial check that leaves no experiment directory for later use can leave its command and outcome in the task report. Do not create metadata, README, and journal files merely to complete a template.
 
-For nontrivial, retained, or resumable experiments, use:
+For nontrivial, retained, or resumable experiments, choose the records needed for recovery:
 
 - `metadata.json` for identity, baseline, and lifecycle decisions.
 - `README.md` for a concise current-state snapshot and evidence pointers.
@@ -71,18 +82,20 @@ Allocate new directories atomically, for example with `mktemp -d`. Related steps
 
 Write the minimal local context immediately after allocation, before experimental work. If interrupted before this record exists, later review must treat the directory as unidentified rather than infer that it is disposable.
 
-### Adopt a User-Prepared Directory
+### Initialize a User-Started Experiment
 
-When the user supplies a directory under a managed scratch root for processing, adopt it before processing:
+The user may create an experiment directory under `scratch/` or another managed scratch root, prepare inputs, and then ask the agent to take over. The user need not follow this policy beforehand. Initialize that existing directory before experimental work; preserve their inputs and preliminary work.
 
-1. **Inspect and preserve minimal provenance.** Establish scope and relevant active use. Do not adopt the scratch root, unrelated siblings, or a symlink target outside the authorized workspace. If records identify an existing experiment, use §3's recovery procedure instead of renaming or resetting it. Before renaming, leave its original path, purpose, and identification of supplied inputs in a local record; reuse existing records or use a nonconflicting filename. This record must move with the directory.
-2. **Normalize its name.** Rename the whole directory within the same managed root using the convention above and an operation that fails if the destination exists. On collision, generate another identifier. Preserve its contents; do not substitute copy-and-delete, restructure inputs, or create compatibility symlinks automatically. If safe renaming is blocked by active use or filesystem constraints, retain the directory and report why.
-3. **Complete provenance.** Extend the pre-rename record with the normalized path, input inventory, observed Git baseline, and next action. Identify pre-existing inputs separately from generated outputs; whole input subdirectories may serve as inventory entries. Preserve existing user files and create only needed records. Append an `INITIALIZED` entry if a journal is used.
-4. **Report the normalized path and proceed.** Update known references within the authorized task when needed; do not search and rewrite unrelated project files.
+The handoff authorizes directory normalization and necessary local records within the assigned experiment. A request merely to inspect a directory does not authorize adoption. For previously initialized or partly initialized experiments, use §3 Recovery.
 
-Adoption authorizes directory normalization and necessary record creation within the assigned task. Input modification or deletion still requires authorization from the processing task or an applicable user-established policy. Retain directories containing original inputs at completion unless their disposal is authorized.
+1. **Confirm scope and state.** Identify the assigned directory, experimental question, prepared inputs, and any existing work. Check relevant active use and known dependencies on its current path. Verify that the resolved directory lies inside the authorized managed root. Do not adopt the root itself, unrelated directories, or automatically follow a directory symlink to adopt its target.
+2. **Record the handoff before renaming.** Save the original path, purpose, supplied inputs and their known sources, adoption time with timezone, and observed Git baseline. Identify all pre-existing material separately from agent-generated outputs; whole input subdirectories may serve as inventory entries. Reuse suitable local records or create a small file with a nonconflicting name. Preserve user content and record unknown provenance as unknown. If renaming is needed, also record the intended destination so an interrupted initialization can be recovered. This record stays with the directory.
+3. **Normalize the directory name.** Apply the Workspace Identity convention above. Retain an already conforming name; record the actual adoption time and baseline separately. Otherwise rename the whole directory within the same managed root using an atomic operation that fails if the destination exists. Do not pre-create the destination. On collision, choose another random identifier and update the intended destination before retrying. Verify the actual resulting path before proceeding; a skipped rename is not success. Preserve the contents without copy-and-delete, input restructuring, or automatic compatibility symlinks.
+4. **Complete initialization and proceed.** Update the local record with the actual path, any unresolved exception, and the next action. Create metadata or other records only as needed under this policy. Update known task references that the agent is authorized to edit, report the actual workspace path, and begin work when inputs and paths are usable.
 
-Keep the normalized identity stable across later handoffs. The adoption timestamp and observed Git revision do not establish when or how the supplied data was produced; record its known provenance separately and mark unavailable provenance as unknown.
+If active use, path dependencies, or filesystem constraints prevent safe renaming, keep the original directory and record and report the reason. Continue there only when the requested work is safe; otherwise resolve the specific blocker first. Changing paths inside supplied inputs requires authorization for those edits; renaming the directory does not grant it.
+
+Keep the established identity stable across later handoffs. Adoption time and the observed Git revision describe agent initialization; they do not establish when or how user-supplied data was produced. Input modification and disposal require authority from the experimental task or an applicable user-established policy; adoption alone grants neither.
 
 ### Metadata for Retained or Resumable Work
 
@@ -100,7 +113,7 @@ Use ISO 8601 timestamps with explicit timezone offsets. Record these fields when
 | `knowledge_paths` | Verified durable destinations; start with `[]` and add only actual, checked paths |
 | `retention` | Workspace disposition: `temporary` by default, `archived` when intentionally retained as an archive, or `disposable` after an authorized disposal decision; always subject to cleanup checks |
 
-For user-prepared work, also record `workspace_origin: "user_prepared"`, `managed_by`, `initialized_at`, `original_path`, and `initial_inputs`. Identify the user as the original preparer where known; do not claim the agent created supplied files. Preserve earlier creation history separately. Use actual session identifiers only when available.
+When metadata is used for user-prepared work, also record `workspace_origin: "user_prepared"`, `managed_by`, `initialized_at`, `original_path`, and `initial_inputs`. Set `initialized_at` when agent initialization is complete, including any recorded naming exception. Identify the user as the original preparer where known; do not claim the agent created supplied files. Preserve earlier creation history separately. Use actual session identifiers only when available.
 
 Outcome values describe the investigation, not whether summary or cleanup is finished:
 
@@ -144,6 +157,8 @@ Before resuming or modifying a previous experiment, establish ownership or coord
 
 Continue from the last verified state. When an operation's completion was not recorded, treat its result as unverified until checked; missing records do not prove it failed or did not run. Inspect partial results and possible side effects before retrying operations or using their outputs.
 
+For interrupted initialization, reconcile any recorded original and intended paths with the directory's actual location before retrying a rename. Preserve the established identity, provenance, and initial Git baseline; complete only the missing initialization steps. A missing metadata file or incomplete record alone does not justify starting initialization over.
+
 Recorded stage, outcome, retention, directory age, stale heartbeat, PID alone, or agent-written records cannot reliably prove inactivity. Processes may outlive their manager. Do not claim supervision, locking, automatic recovery, or safe garbage collection exists unless an actual mechanism provides it. Interpret older `status` and `knowledge_exported` fields against actual evidence when resuming; do not infer preservation or disposal authority from their names or values.
 
 ## 4. Summary
@@ -152,7 +167,7 @@ Begin with a brief report of what was verified, what failed, and what remains un
 
 ### Decide Whether to Preserve More
 
-Choose handling by future use and the maintenance it justifies, not as a ladder of increasing importance. The four common options below may be combined; reporting a result does not decide whether its scratch materials are retained or deleted. Archive is an additional option for original evidence. Do not classify every artifact or produce a separate assessment report.
+Choose handling by future use and the maintenance it justifies, not as a ladder of increasing importance. The options below may be combined; reporting a result does not decide whether its scratch materials are retained or deleted. Do not classify every artifact or produce a separate assessment report.
 
 | Handling | Appropriate use | Responsibility |
 |---|---|---|
