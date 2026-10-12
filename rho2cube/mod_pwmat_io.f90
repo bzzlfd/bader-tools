@@ -28,7 +28,7 @@ module pwmat_io_mod
    use utils_mod
    implicit none
    private
-   public :: atom_config_t, rho_meta_t, read_atom_config, open_rho, &
+   public :: atom_config_t, rho_meta_t, read_atom_config, parse_atom_config, open_rho, &
              read_rho_meta, meta_same, rho_read_first, rho_read_add
 
    ! tolerance for lattice comparison, angstrom
@@ -86,38 +86,61 @@ contains
    subroutine read_atom_config(filename, atoms)
       character(*), intent(in) :: filename
       type(atom_config_t), intent(out) :: atoms
-      integer :: u, ios, i
-      open(newunit=u, file=filename, status='old', action='read', iostat=ios)
+      character(:), allocatable :: text
+      integer :: u, ios, nbytes
+      ! Load the text unchanged; file and in-memory inputs share one parser.
+      open(newunit=u, file=filename, status='old', action='read', &
+           access='stream', form='unformatted', iostat=ios)
       if (ios /= 0) call die('cannot open '//trim(filename))
-      read(u, *, iostat=ios) atoms%natom
-      if (ios /= 0 .or. atoms%natom <= 0) &
-         call die('bad atom-number line in '//trim(filename))
-      call find_atom_card(u, 'LATTICE', filename)
-      do i = 1, 3
-         read(u, *, iostat=ios) atoms%AL(:,i)
-         if (ios /= 0) call die('bad lattice line in '//trim(filename))
-      end do
-      call find_atom_card(u, 'POSITION', filename)
-      allocate(atoms%itype(atoms%natom), atoms%xfrac(atoms%natom,3))
-      do i = 1, atoms%natom
-         read(u, *, iostat=ios) atoms%itype(i), atoms%xfrac(i,:)
-         if (ios /= 0) call die('bad atom line in '//trim(filename))
-      end do
+      inquire(unit=u, size=nbytes, iostat=ios)
+      if (ios /= 0) call die('cannot determine size of '//trim(filename))
+      allocate(character(nbytes) :: text)
+      if (nbytes > 0) then
+         read(u, iostat=ios) text
+         if (ios /= 0) call die('cannot read '//trim(filename))
+      end if
       close(u)
+      call parse_atom_config(text, atoms, filename)
    end subroutine read_atom_config
 
-   subroutine find_atom_card(u, card, filename)
+   subroutine parse_atom_config(text, atoms, source)
+      character(*), intent(in) :: text
+      type(atom_config_t), intent(out) :: atoms
+      character(*), intent(in), optional :: source
+      character(:), allocatable :: line, label
+      integer :: pos, ios, i
+      allocate(character(8) :: label)
+      label = '<string>'
+      if (present(source)) label = source
+      pos = 1
+      if (.not. next_atom_line(text, pos, line)) call die('bad atom-number line in '//label)
+      read(line, *, iostat=ios) atoms%natom
+      if (ios /= 0 .or. atoms%natom <= 0) &
+         call die('bad atom-number line in '//label)
+      call find_atom_card(text, pos, 'LATTICE', label)
+      do i = 1, 3
+         if (.not. next_atom_line(text, pos, line)) call die('bad lattice line in '//label)
+         read(line, *, iostat=ios) atoms%AL(:,i)
+         if (ios /= 0) call die('bad lattice line in '//label)
+      end do
+      call find_atom_card(text, pos, 'POSITION', label)
+      allocate(atoms%itype(atoms%natom), atoms%xfrac(atoms%natom,3))
+      do i = 1, atoms%natom
+         if (.not. next_atom_line(text, pos, line)) call die('bad atom line in '//label)
+         read(line, *, iostat=ios) atoms%itype(i), atoms%xfrac(i,:)
+         if (ios /= 0) call die('bad atom line in '//label)
+      end do
+   end subroutine parse_atom_config
+
+   subroutine find_atom_card(text, pos, card, source)
       ! Search independently from the start, so card order is immaterial.
-      integer, intent(in) :: u
-      character(*), intent(in) :: card, filename
-      character(1024) :: line
+      character(*), intent(in) :: text, card, source
+      integer, intent(out) :: pos
+      character(:), allocatable :: line
       character(32) :: keyword
       integer :: ios, i, code
-      rewind(u)
-      do
-         read(u, '(a)', iostat=ios) line
-         if (ios < 0) call die('missing '//card//' card in '//trim(filename))
-         if (ios > 0) call die('reading '//card//' card failed: '//trim(filename))
+      pos = 1
+      do while (next_atom_line(text, pos, line))
          keyword = ''
          read(line, *, iostat=ios) keyword
          if (ios /= 0) cycle
@@ -128,7 +151,31 @@ contains
          end do
          if (keyword == card) return
       end do
+      call die('missing '//card//' card in '//source)
    end subroutine find_atom_card
+
+   logical function next_atom_line(text, pos, line) result(found)
+      ! Return a nonblank line, allowing LF/CRLF and spaces or tabs.
+      character(*), intent(in) :: text
+      integer, intent(inout) :: pos
+      character(:), allocatable, intent(out) :: line
+      integer :: length, offset
+      found = .false.
+      line = ''
+      do while (pos <= len(text))
+         offset = index(text(pos:), new_line('a'))
+         length = len(text) - pos + 1
+         if (offset > 0) length = offset - 1
+         line = text(pos:pos + length - 1)
+         pos = pos + length + 1
+         if (len(line) > 0) then
+            if (line(len(line):) == achar(13)) line = line(:len(line)-1)
+         end if
+         if (verify(line, ' '//achar(9)) == 0) cycle
+         found = .true.
+         return
+      end do
+   end function next_atom_line
 
    subroutine rho_read_first(u, filename, meta, weight, acc, rsum)
       ! read the data records straight into the accumulator, then
