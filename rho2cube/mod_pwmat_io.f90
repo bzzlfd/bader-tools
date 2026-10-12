@@ -3,12 +3,12 @@
 ! files.
 !
 ! atom.config (text, angstrom):
-!    line 1            : natom (first token)
-!    line 2            : skipped
-!    lines 3-5         : lattice vectors a1, a2, a3 (first 3 tokens)
-!    line 6            : skipped
-!    lines 7-...       : natom lines  itype fx fy fz mx my mz
+!    first data line   : natom (first token; leading blank lines allowed)
+!    LATTICE card      : 3 lattice vectors a1, a2, a3 (first 3 tokens)
+!    POSITION card     : natom lines  itype fx fy fz mx my mz
 !                        itype is the atomic number.
+!    Cards are case-insensitive first tokens, in either order;
+!    blank lines and unrelated cards may occur between the blocks.
 !
 ! OUT.RHO (little-endian fortran sequential unformatted):
 !    record 1          : int32  n1, n2, n3, nnodes
@@ -92,14 +92,12 @@ contains
       read(u, *, iostat=ios) atoms%natom
       if (ios /= 0 .or. atoms%natom <= 0) &
          call die('bad atom-number line in '//trim(filename))
-      read(u, *, iostat=ios)                              ! "LATTICE" line
-      if (ios /= 0) call die('unexpected end of '//trim(filename))
+      call find_atom_card(u, 'LATTICE', filename)
       do i = 1, 3
          read(u, *, iostat=ios) atoms%AL(:,i)
          if (ios /= 0) call die('bad lattice line in '//trim(filename))
       end do
-      read(u, *, iostat=ios)                              ! "POSITION" line
-      if (ios /= 0) call die('unexpected end of '//trim(filename))
+      call find_atom_card(u, 'POSITION', filename)
       allocate(atoms%itype(atoms%natom), atoms%xfrac(atoms%natom,3))
       do i = 1, atoms%natom
          read(u, *, iostat=ios) atoms%itype(i), atoms%xfrac(i,:)
@@ -107,6 +105,30 @@ contains
       end do
       close(u)
    end subroutine read_atom_config
+
+   subroutine find_atom_card(u, card, filename)
+      ! Search independently from the start, so card order is immaterial.
+      integer, intent(in) :: u
+      character(*), intent(in) :: card, filename
+      character(1024) :: line
+      character(32) :: keyword
+      integer :: ios, i, code
+      rewind(u)
+      do
+         read(u, '(a)', iostat=ios) line
+         if (ios < 0) call die('missing '//card//' card in '//trim(filename))
+         if (ios > 0) call die('reading '//card//' card failed: '//trim(filename))
+         keyword = ''
+         read(line, *, iostat=ios) keyword
+         if (ios /= 0) cycle
+         do i = 1, len_trim(keyword)
+            code = iachar(keyword(i:i))
+            if (code >= iachar('a') .and. code <= iachar('z')) &
+               keyword(i:i) = achar(code - iachar('a') + iachar('A'))
+         end do
+         if (keyword == card) return
+      end do
+   end subroutine find_atom_card
 
    subroutine rho_read_first(u, filename, meta, weight, acc, rsum)
       ! read the data records straight into the accumulator, then
