@@ -21,6 +21,9 @@ $(TARGET): $(SRCS) Makefile
 	mkdir -p build
 	$(FC) $(FFLAGS) $(LDFLAGS) -Jbuild -o $@ $(SRCS) $(LDLIBS)
 
+test:
+	$(MAKE) -C tests test
+
 install: $(TARGET) $(TOOLS)
 	$(INSTALL) -d "$(DESTDIR)$(BINDIR)"
 	$(INSTALL) -m 755 "$(TARGET)" $(TOOLS) "$(DESTDIR)$(BINDIR)/"
@@ -28,4 +31,7 @@ install: $(TARGET) $(TOOLS)
 clean:
 	$(RM) build/*.mod $(TARGET)
 
-.PHONY: all clean install
+clean-tests:
+	$(MAKE) -C tests clean
+
+.PHONY: all test clean clean-tests install
