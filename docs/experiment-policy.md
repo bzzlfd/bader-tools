@@ -46,7 +46,21 @@ Apply these throughout the lifecycle:
 - Modify only experiments created by or assigned to the task, unless coordination establishes broader authority. Protect other active tasks' work and synchronize shared edits; use external ownership and locking mechanisms when available.
 - Preserve original user inputs and unknown artifacts until their roles and disposal authority are established. Completion alone does not authorize deleting inputs.
 - Capture evidence before it is lost. Keep provenance truthful, distinguish observations from verified conclusions, and keep secrets out of records.
-- Before any deletion, apply §4's cleanup checks, even if deleting during another stage.
+- Before any deletion, apply the Cleanup Checks below, regardless of the current stage or task.
+
+### Cleanup Checks
+
+Evaluate each experiment directory as a lifecycle unit rather than dismantling evidence from an unevaluated experiment. Before deleting, verify:
+
+- The resolved target is the intended experiment directory inside a known managed scratch root, not the root itself, and deletion cannot affect outside paths.
+- Ownership or cleanup authority is established and no relevant active task or process is using it.
+- An explicit disposal decision or applicable cleanup policy authorizes disposal, including any original user inputs.
+- Valuable knowledge and required evidence have been preserved, or their disposal has been explicitly judged acceptable. Declining additional tests or notes does not by itself make original evidence disposable.
+- Relevant tests, notes, scripts, and retained deliverables no longer require files in this workspace. Exported paths alone do not prove these dependencies were removed.
+
+Coordinate with other possible users before deletion and recheck activity if the situation may have changed since inspection. Where concurrent reuse is possible, use an actual shared exclusion mechanism; an earlier check or agent-written ownership field does not prevent a new user from entering. If safe exclusion cannot be established, retain the directory.
+
+Do not follow symlinks outside the managed root or use broad recursive deletion with unchecked paths. Age, stage, outcome, retention expiry, and a completed preservation assessment alone do not authorize deletion. Any separate cleanup mechanism must independently establish the same conditions; retain the directory when uncertain.
 
 ### Record Only What the Experiment Needs
 
@@ -209,25 +223,13 @@ Include reproduction materials only when selected or already requested and repea
 
 Assemble any needed runner from the validated workflow. Preserve required inputs and environment assumptions, verify what the handoff requires, and state what was actually run and any limitations. Preserve dependencies in stable locations before deleting scratch; claim reproducibility only to the extent supported by evidence.
 
-### Retention and Cleanup
+### Workspace Retention
 
-Return to work if needed; otherwise decide temporary retention, archival, or disposal separately from the experiment outcome and durable deliverables. Update existing records with the outcome, retained evidence, next action if needed, and actual decisions. Ensure anything left for later use has enough recovery context. If ownership, activity, or value is uncertain, retain it temporarily for review. Temporary retention does not require promoting the contents or setting a speculative expiry date.
+Decide temporary retention, archival, or disposal for the current experiment separately from its outcome and durable deliverables. Update existing records with the outcome, retained evidence, next action if needed, and actual decisions. Ensure anything left for later use has enough recovery context. If ownership, activity, or value is uncertain, retain it temporarily for review. Temporary retention does not require promoting the contents or setting a speculative expiry date.
 
 Keep any existing README concise. Reorganize accumulated history only when it materially improves recovery or is requested; preserve original journal entries and provide brief evidence pointers as needed. Do not discard unique evidence or corrections to meet a length target. Routine work does not require maintaining a second history summary.
 
-Clean up disposable experiments created by or assigned to the task when safe. Evaluate each directory as a lifecycle unit rather than dismantling evidence from an unevaluated experiment.
-
-Before deleting an experiment, verify:
-
-- The resolved target is the intended experiment directory inside a known managed scratch root, not the root itself, and deletion cannot affect outside paths.
-- Ownership or cleanup authority is established and no relevant active task or process is using it.
-- An explicit disposal decision or applicable cleanup policy authorizes disposal, including any original user inputs.
-- Valuable knowledge and required evidence have been preserved, or their disposal has been explicitly judged acceptable. Declining additional tests or notes does not by itself make original evidence disposable.
-- Relevant tests, notes, scripts, and retained deliverables no longer require files in this workspace. Exported paths alone do not prove these dependencies were removed.
-
-Coordinate with other possible users before deletion and recheck activity if the situation may have changed since inspection. Where concurrent reuse is possible, use an actual shared exclusion mechanism; an earlier check or agent-written ownership field does not prevent a new user from entering. If safe exclusion cannot be established, retain the directory.
-
-Do not follow symlinks outside the managed root or use broad recursive deletion with unchecked paths. Age, stage, outcome, retention expiry, and a completed preservation assessment alone do not authorize deletion. A separate cleanup mechanism must independently establish the same conditions; prefer retention and recovery review when uncertain.
+Clean up disposable experiments created by or assigned to the task when the common Cleanup Checks (§1) are satisfied.
 
 ### Git and Completion Report
 
@@ -246,12 +248,14 @@ Keep the completion report brief: findings and verification, remaining uncertain
 
 ## 5. Review and Cleanup
 
-Run this maintenance task when the user requests review or cleanup of managed scratch workspaces. It does not require a standing reviewer, background monitor, heartbeat, or new per-experiment state fields.
+Use this separate maintenance procedure when the user requests review or cleanup of managed scratch workspaces. Reassess earlier retention decisions against current evidence. It does not require a standing reviewer, background monitor, heartbeat, or new per-experiment state fields.
 
-1. Establish the requested roots, scope, and disposal authority. Inspect directories without resetting their identity or inferring disposal authority from their names. Age may prioritize review, but cannot decide deletion.
+A review request authorizes inspection and recommendations. An explicit cleanup request or established user cleanup policy authorizes qualifying disposal within its scope, without asking again for each directory.
+
+1. Establish the requested roots, scope, and disposal authority. Inspect directories without resetting their identity or inferring disposal authority from their names. Use age only to prioritize review.
 2. Compare available records with actual files, partial outputs, relevant tasks and processes (including jobs that outlive an agent session), and external dependencies. Apply §3's recovery checks as needed; record missing evidence as uncertainty.
 3. Classify each directory for this review using the table below. Keep previous decisions distinct from current observations; these categories belong in the review report, not new metadata fields.
-4. Perform only authorized actions that satisfy §4's cleanup checks. Briefly report what was removed, retained paths and reasons, and concrete unresolved decisions. Update existing records only for verified corrections or actual decisions; a separate report file is optional.
+4. Carry out authorized actions, applying the common Cleanup Checks (§1) before deletion. Briefly report what was removed, retained paths and reasons, and concrete unresolved decisions. Update existing records only for verified corrections or actual decisions; a separate report file is optional.
 
 | Current observation | Handling |
 |---|---|
@@ -260,4 +264,4 @@ Run this maintenance task when the user requests review or cleanup of managed sc
 | All cleanup conditions satisfied | Delete within the granted scope, or propose the specific disposal if not authorized |
 | Unknown provenance, activity, or value | Retain and identify what evidence or authority is missing |
 
-A review request authorizes inspection and recommendations. An explicit cleanup request or established user cleanup policy authorizes qualifying disposal within its scope, without asking again for each directory. Neither overrides protection of active work, original inputs without disposal authority, required dependencies, or unresolved uncertainty. Do not convert missing completion records or absent visible processes into `failed`, `inconclusive`, or permission to delete.
+Do not convert missing completion records or absent visible processes into `failed`, `inconclusive`, or permission to delete.
