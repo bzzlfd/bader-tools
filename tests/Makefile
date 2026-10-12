@@ -12,8 +12,18 @@ MODULE_SRCS = ../rho2cube/mod_utils.f90 \
 TEST_SRCS = $(wildcard test_*.f90)
 TEST_TARGETS = $(patsubst %.f90,$(BUILD_DIR)/%.x,$(TEST_SRCS))
 
+# Run from tests/: read fixed inputs from data/, write artifacts only to
+# TEST_WORK_DIR (a separate directory for each test). Fixed inputs are supplied
+# separately; make test never creates or updates them. Keep runtime artifacts
+# until make clean-tests.
 test: $(TEST_TARGETS)
-	@set -e; for test_bin in $(TEST_TARGETS); do "$$test_bin"; done
+	@set -e; status=0; \
+	for test_bin in $(TEST_TARGETS); do \
+		test_name=$${test_bin##*/}; test_name=$${test_name%.x}; \
+		work_dir="$(abspath $(BUILD_DIR)/work)/$$test_name"; \
+		mkdir -p "$$work_dir"; \
+		TEST_WORK_DIR="$$work_dir" "$$test_bin" || status=1; \
+	done; exit $$status
 
 $(BUILD_DIR)/%.x: %.f90 $(MODULE_SRCS) Makefile
 	mkdir -p $(BUILD_DIR)/$*

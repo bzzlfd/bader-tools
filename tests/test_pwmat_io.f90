@@ -1,9 +1,8 @@
 program test_pwmat_io
    use utils_mod, only: dp
-   use pwmat_io_mod, only: atom_config_t, parse_atom_config
+   use pwmat_io_mod, only: atom_config_t, read_atom_config
    implicit none
    type(atom_config_t) :: atoms
-   character, parameter :: nl = new_line('a')
    integer :: i
    real(dp), parameter :: tol = 1.0e-12_dp
    real(dp), parameter :: lattice_constant = 5.68452685_dp
@@ -17,23 +16,7 @@ program test_pwmat_io
    !    and between data records within each card.
    ! Run from the project root with: make test
    ! ==================================================================
-   character(*), parameter :: config = '   '//nl//nl//'     8'//nl//nl//' POSITION'//nl// &
-      '  11  0.75000000  0.25000000  0.25000000 1 1 1'//nl// &
-      '    '//nl// &
-      '  11  0.25000000  0.75000000  0.25000000 1 1 1'//nl// &
-      '  11  0.25000000  0.25000000  0.75000000 1 1 1'//nl// &
-      '  11  0.75000000  0.75000000  0.75000000 1 1 1'//nl// &
-      '  17  0.25000000  0.25000000  0.25000000 1 1 1'//nl// &
-      '  17  0.75000000  0.75000000  0.25000000 1 1 1'//nl// &
-      '  17  0.75000000  0.25000000  0.75000000 1 1 1'//nl// &
-      '  17  0.25000000  0.75000000  0.75000000 1 1 1'//repeat(nl, 9)// &
-      ' LATTICE'//nl// &
-      '  5.68452685  0.00000000  0.00000000'//nl// &
-      '  0.00000000  5.68452685  0.00000000'//nl// &
-      '    '//nl// &
-      '  0.00000000  0.00000000  5.68452685'//nl
-
-   call parse_atom_config(config, atoms)
+   call read_atom_config('data/pwmat_io/atom-reordered-blanks.config', atoms)
    call assert_true(atoms%natom == 8, 'atom count')
    call assert_true(size(atoms%itype) == 8, 'atomic number array size')
    call assert_true(all(shape(atoms%xfrac) == [8,3]), 'coordinate array shape')
@@ -56,7 +39,7 @@ program test_pwmat_io
       0.75_dp, 0.25_dp, 0.75_dp, &
       0.25_dp, 0.75_dp, 0.75_dp], [3,8]))
    call assert_true(all(abs(atoms%xfrac - expected_xfrac) < tol), 'fractional coordinates and order')
-   print '(a)', 'PASS: parse_atom_config with reordered cards and internal blank lines'
+   print '(a)', 'PASS: read_atom_config with reordered cards and internal blank lines'
 
 contains
 
