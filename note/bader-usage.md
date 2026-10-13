@@ -1,311 +1,355 @@
-Bader 定义了一种以电荷密度梯度流将分子划分为原子的方式, 这种划分可以用作电荷分析. 
-一些 DFT 软件输出的电荷密度数据是以实空间均匀格点上浮点数数值表示的, 
-Henkelman 针对这种电荷密度数据形式, 发明了一种高效的 Bader volume 划分算法. 
+# Bader 程序使用说明
 
-该算法的实现程序 `bader` 可以在[Henkelman的课题组网站下](https://theory.cm.utexas.edu/henkelman/code/bader/)或[github](https://github.com/henkelmangroup/bader)找到,  
-课题组网站中还包含了源码/可执行文件下载, 程序说明, 输入实例, 对 VASP/CASTEP 用户的提醒, 论文列表. 
+Bader 定义了一种利用电荷密度梯度流将分子划分为原子区域的方法，这种划分可用于电荷分析。
+一些 DFT 软件将电荷密度表示为实空间均匀格点上的浮点数。Henkelman 针对这种数据形式，提出了一种高效的 Bader volume 划分算法。
 
-本文会结合论文和代码, 对该程序的使用做一些解释, 希望能够对初次接触, 对该程序的使用踌躇不定的人提供一些帮助. 
-本文可能不会覆盖所有内容, 但在现在的 coding agent 时代, 源码是最好的程序行为说明, 你可以凭着兴趣继续探索. 
+该算法的实现程序 `bader` 可以在 [Henkelman 课题组网站](https://theory.cm.utexas.edu/henkelman/code/bader/)或 [GitHub](https://github.com/henkelmangroup/bader) 上找到。
+课题组网站还提供源码和可执行文件下载、程序说明、输入示例、对 VASP 和 CASTEP 用户的提醒，以及论文列表。
 
-# 编译和安装
-`bader` 的 Fortran 源码/可执行程序可以从[官网](https://theory.cm.utexas.edu/henkelman/code/bader/download/bader.tar.gz)或[github](https://github.com/henkelmangroup/bader)下载
+本文结合论文和代码介绍该程序的用法，希望能对初次接触、不知如何使用它、面对程序参数踌躇不能行的读者有所帮助。
+本文不会覆盖所有内容，但在 coding agent 时代，源码是最好的程序说明书（如果不能把源码作者抓来解说的话），你可以跟随自己的好奇心继续探索。
 
-这本身不是一个有复杂依赖的 Fortran 程序, 在 bader 源码中 Makefile 的同级目录下运行
+## 编译和安装
+
+`bader` 的 Fortran 源码可以从[官网](https://theory.cm.utexas.edu/henkelman/code/bader/download/bader.tar.gz)或 [GitHub](https://github.com/henkelmangroup/bader) 下载；官网也提供可执行程序。
+
+这个 Fortran 程序没有复杂的依赖。源码包提供了按平台和编译器区分的 `makefile.*` 文件，先选择适合你的环境的文件并复制为 `Makefile`，再在源码目录中运行：
+
 ```bash
 make bader
 ```
-就可以在源码目录编译出一个 `bader` 可执行文件. 
 
-看你的目录组织方式了, 我更喜欢
+即可在源码目录中生成 `bader` 可执行文件。
+
+安装方式取决于你的目录组织习惯。我更喜欢：
+
 ```bash
-PATH=$HOME/.local/bin:$PATH
-ln -s bader $HOME/.local/bin/bader
+PATH="$HOME/.local/bin:$PATH"
+ln -s "$PWD/bader" "$HOME/.local/bin/bader"
 ```
-让 Linux `PATH` 环境变量能找到 `bader`. 
-任何问题都可以试着问问 LLM . 
 
-## 尝试 examples 
-官网或[github](https://github.com/henkelmangroup/bader/tree/main/examples) 也可以找到 examples, 每个 example 压缩包中一般包括电荷密度输入文件 (`CHG_*`) 和`bader`分析的输出文件`ACF.dat`, `BCF.dat`, `BVF.dat` . 
-可以解压一个压缩包并进入其目录 (如 `C2H4a`), 运行 `bader <chargefile>` (如 `bader CHG_C2H4a`), 就可以得到结果; 
+这样，Linux 就能通过 `PATH` 环境变量找到 `bader`。
+无论在安装还是使用中遇到问题，都可以试着向 LLM 大人求助。
 
-其中 `NaCl_wcore` 压缩包较为特别, 它除了输入电荷密度文件 CHGCAR, 还有一个 CHGCAR_sum, 这是
+### 尝试示例
 
-1. 在 INCAR 中设置 `LAECHG=.TRUE.`
-2. 运行 VASP 输出全电子电荷密度文件 `AECCAR0`, `AECCAR1`, `AECCAR2` 
-3. 使用 Henkelman 提供的脚本 [chgsum.pl](http://theory.cm.utexas.edu/vtsttools/scripts.html) 执行 `chgsum.pl AECCAR0 AECCAR2` 合并
+bader 官网 examples 章节 和 [GitHub](https://github.com/henkelmangroup/bader/tree/main/examples) 都提供示例。每个示例压缩包通常包含电荷密度输入文件（如 `CHG_*`），以及 `bader` 的输出文件 `ACF.dat`、`BCF.dat` 和 `AVF.dat`。
+解压后，进入示例目录（如 `C2H4a`），运行 `bader <chargefile>`（如 `bader CHG_C2H4a`），即可生成分析结果文件。结果可能因程序版本不同而与示例有所差异。
 
-得到的文件. 可以以该文件作为 "全电子" 电荷密度参考, 执行 `bader CHGCAR -ref CHGCAR_sum` 进行更可靠的空间划分和电荷积分. 即, 空间划分在 `CHGCAR_sum` 数据中进行, 电子密度积分在 `CHGCAR` 中进行. 
-使用 `-ref` 在这个例子中的效果是, 在使用前, Na 原子的一个价电子不会在 Na 原子附近产生任何峰值, bader 划分会让电荷密度梯度全都流到 Cl 原子上; 使用 `-ref` 引入全电子划分参考后, Na 原子附近会保留一些电子数. 其结果可以与 `NaCl.tar.gz` (Na原子有9个价电子的计算结果) 比较. 
+其中，`NaCl_wcore` 比较特别：除了输入文件 `CHGCAR`，它还包含 `CHGCAR_sum`。后者是全电子电荷密度参考，在这个例子中，不使用 `-ref` 时，1个价电子的 Na 原子计算不会在 Na 附近形成密度峰，梯度流最终都汇流到 Cl 原子上；引入全电子参考密度后，Na 附近会分得一些电子数。
 
-注意不要直接执行 `bader CHGCAR_sum` , 因为全电子电荷密度变化很剧烈, `CHGCAR` 的实空间网格密度太稀疏无法准确描述, 最直接的后果是对 `CHGCAR_sum` 以黎曼求和的方式积分, 无法准确得到全电子电子数. 
+`CHGCAR_sum` 由以下步骤生成：
 
-# 软件使用
+1. 在 `INCAR` 中设置 `LAECHG=.TRUE.`。
+2. 运行 VASP，输出全电子电荷密度文件 `AECCAR0`、`AECCAR1` 和 `AECCAR2`。
+3. 使用 Henkelman 提供的 [chgsum.pl](http://theory.cm.utexas.edu/vtsttools/scripts.html) 脚本，执行 `chgsum.pl AECCAR0 AECCAR2`，将两份密度相加。
 
-## 直接使用
+将 `CHGCAR_sum` 作为“全电子”电荷密度参考，执行 `bader CHGCAR -ref CHGCAR_sum`，进行更可靠的空间划分和电荷积分。这时候会使用 `CHGCAR_sum` 进行空间划分，然后在该空间划分下使用 `CHGCAR` 进行电荷密度积分。
+电荷划分结果可以与 `NaCl.tar.gz` 中的结果比较，后者来自 Na 原子有 9 个价电子的计算。
 
-直接运行
+
+注意不建议直接运行 `bader CHGCAR_sum`：全电子电荷密度变化剧烈，`CHGCAR` 的实空间网格过于稀疏无法准确描述它，最直接的后果是对 `CHGCAR_sum` 作黎曼求和无法得到准确的全电子总数。
+
+## 软件使用
+
+### 直接使用
+
+直接运行：
+
 ```bash
 bader
 ```
-会打印简短的程序 usage 
 
-运行 
+会打印简短的使用说明。运行：
+
 ```bash
 bader -h
 ```
-可以对 usage 中出现的参数进行更详细的解释
 
-如果想要用它分析电荷密度文件, 最简单的命令是
+则会给出各参数的详细说明。
+
+分析电荷密度文件的最简单命令是：
+
 ```bash
 bader <chargefile>
 ```
-程序本身可以推断区分所传入的文件格式, 是 GUASSIAN的 .cube, 还是 VASP4或VASP5 的 CHGCAR
+
+程序可以自动判断输入是 Gaussian 的 `.cube` 文件，还是 VASP 4 或 VASP 5 的 `CHGCAR` 文件。也可以显式指定输入格式：
 
 ```bash
-bader <chargefile> -i <cube|chgcar> 
+bader <chargefile> -i <cube|chgcar>
 ```
-可以强行指定使用以哪种程式读取输入文件. 
-如果一次运行程序涉及多个 <chargefile> 格式的输入输出, 它们的格式是相同的. 
+
+一次运行 `bader` 涉及的所有电荷密度输入文件需使用相同格式。
 
 ```bash
 bader <chargefile> -ref <reference_charge>
 ```
-可以以 `<reference_charge>` 为参考划分 bader volume 区域, 然后在划分结果上用 `<chargefile>` 数据进行电子密度积分. 
 
-## 选择例程 (`-c`/`-n`)
-`bader` 程序有两种划分方式的例程 
+这条命令以 `<reference_charge>` 为参考划分 Bader volume，再用 `<chargefile>` 中的电荷密度进行积分。
 
-1. 以原子位置和电荷密度为参考的bader划分例程 
-2. 仅以原子位置为参考的voronoi划分例程
+### 选择例程（`-c` 和 `-n`）
 
-程序内部有两个布尔变量`bader_flag`和`voronoi_flag`, 分别独立控制两个划分例程的开关. 
-`-c`/`-n` 参数的目的, 就是把相应的布尔变量设成 `.true.`/`.false.`,
+`bader` 提供两种空间划分例程：
 
-默认情况下
+1. 以原子位置和电荷密度为参考的 Bader 划分例程。
+2. 仅以原子位置为参考的 Voronoi 划分例程。
+
+程序内部的布尔变量 `bader_flag` 和 `voronoi_flag` 分别控制这两个例程的开关。
+`-c` 和 `-n` 分别将相应变量设为 `.true.` 和 `.false.`。
+
+默认状态是：
+
 ```fortran
 bader_flag = .true.
 voronoi_flag = .false.
 ```
-如果输入
+
+如果输入：
+
 ```bash
-bader <chargefile> -n voronoi -c voronoi -c voronoi -n bader -c bader 
+bader <chargefile> -n voronoi -c voronoi -c voronoi -n bader -c bader
 ```
-最后的状态是
+
+最终状态是：
+
 ```fortran
 bader_flag = .true.
 voronoi_flag = .true.
 ```
 
-考虑到 `bader` 的主线是 bader划分, 该程序的几乎所有参数只对 bader划分例程有影响, 结果分析的输出文件也只由 bader划分例程产生. 
-所以我们可以把 voronoi 看待为该程序的附带功能, 接下来的讨论会忽视它. 
+Bader 划分是该程序的主要功能，几乎所有参数都围绕它设计，分析结果文件也只由 Bader 划分例程产生。
+因此，本文将 Voronoi 划分视为附带功能，不再展开。
 
-## 选择算法 (`-b`)
+### 选择算法（`-b`）
 
-`-b` 的选项有 `ongrid`, `neargrid` 和 `weight`, 每个选项都与一篇论文对应, 
-对应关系可以参照下表, 具体算法介绍可以参考下一章
+`-b` 的选项有 `ongrid`、`neargrid` 和 `weight`。各算法对应的论文如下，具体介绍见后文。
 
-|      论文       |   `-b`   |
-| :-----------: | :------: |
-| Henkelman2006 |  ongrid  |
-| Sanville2007  | ~~offgrid~~  |
-|   Tang2009    | neargrid |
-|    Yu2011     |  weight  |
+|      论文     |   `-b` 选项   |
+| :-----------: | :-----------: |
+| Henkelman2006 |   `ongrid`    |
+| Sanville2007  | ~~`offgrid`~~ |
+|   Tang2009    |  `neargrid`   |
+|    Yu2011     |   `weight`    |
 
-- Henkelman2006 是 Henkelman 提出原始高效算法的论文; 
-- Sanville2007 指出 Henkelman 算法中会将自由电荷密度梯度吸附到附近26($3^3-1$)个格点上, 甚至会使得该算法甚至会表现出所分析出的电荷转移量依赖于分子取向的结果. 但他们所提出的修正方法较为复杂, 在当前代码中被弃用; 
-- Tang2009 针对 Sanville2007 提出的问题, 在 Henkelman2006 的基础上引入一个修正向量, 简单且有效地解决了 Sanville2007 提出的问题; 
-- 而 Yu2011 有更理论的出发点, 在他们的视角下, 每个格点 (或认为是 voxel) 可以自然地按照比例的归属多个 basin. 
+- Henkelman2006 提出了原始的高效算法。
+- Sanville2007 指出，原始算法会将真实的电荷密度梯度方向“吸附”到周围 26（$3^3-1$）个格点的方向上，其后果甚至使电荷转移分析结果依赖分子取向。他们提出的修正方法较为复杂，在当前代码中已弃用。
+- Tang2009 在原始算法中引入一个修正矢量，简单、有效地解决了 Sanville2007 指出的问题。
+- Yu2011 从更理论的角度出发推导算法，允许一个格点对应的体积元（voxel）按比例分属多个 *basin*。
 
-算法选择推荐 `neargrid` 或 `weight`:
-- neargrid 是默认算法, 计算很快, 修正方法简单且有效; 但是算法是过程依赖的, 不同的过程可能导致最终得到的划分也不同. 所以这个例程会在划分完成后又引入 refine 子例程, 完善*边界*格点归属 (*边界*指的是该格点存在一个近邻格点, 该格点与其近邻格点的归属不同).  
-    - `-r` 可以控制refine例程, 这个参数在历史上发生了多次变化. 过去曾经尝试的设计包括
-        - `-r N`, `N` 是正整数, 表示重新 refine 几次边界点; `N=0`, 表示关闭 refine
-        - `-r <-1|-2|auto>`, `auto` 被解析为 `-1`; 它们都会重复refine, 直到某次发现 refine后需要变更 basin所属的格点数量变成 0 ; `-1` 和 `-2` 的区别是 `-2` 每轮都重新检查所有边界点, `-1` 则是在每轮仅检查上一轮被重置的格点的3×3×3邻域. refine 算法可能有死循环的风险, 这时候可以退回到 `-r N`
-        - 后来 `-r 0` 被设置为执行一次 refine 后退出
-        - 而现在 1.05 版本中 , refine 的逻辑被改为无论如何只 refine 一次, 这样一来 `-r <-1|-2>` 的区别也消失了. 
-    - 一般算法在找到已有所处的格点后就会停止, 对应默认参数 `-m known`, 这是该算法线性scaling的来源; 也可以通过 `-m max` 让flow直到找到basin的极大值点才停止, 这种设置下最终结果在数学上是唯一的. 
-- weight 更优雅, 数学上得到的 bader volume 划分是唯一的, 天然不会遇到 Sanville2007 指出的问题, 但是计算会更耗时一些. 
+算法选择上，推荐 `neargrid` 或 `weight`。
 
+`neargrid` 是默认算法，计算快，修正方法简单、有效。但它的结果可能依赖格点的处理顺序，因此会在初步划分后调用边界归属复核（refine）子例程，重新判定边界格点属于哪个 *basin*。这里的边界格点，是指至少有一个近邻属于不同 *basin* 的格点。
 
-## 输出
-除了在 `stdout` 打印计算进度以外, `bader` 还会默认输出 3 个文件: `ACF.dat`, `BCF.dat`, `AVF.dat`
-- `ACF.dat`: 可以读到每个原子 bader volume 划分下电荷积分数, 是一般用户关心的文件. 
-- `BCF.dat`: 每个原子附近可能有多个极值点 (这尤其在赝势程序是普遍的情况, 价电子电荷密度在周围一圈), 所以 `bader` 程序是以极值点划分basin volume; 然后在就近把这些极大值对应到原子上, 把 basin volume 合并成一个原子 bader volume. 这个文件汇总了 basin 信息. 可以注意到这里的数据一般比 `ACF.dat` 中的多. 
-- `AVF.dat`: 为了显示 basin 和 atom 的对应关系, `BCF.dat` 文件记录了每个 basin 属于哪个 atom; 该文件则是反过来, 记录了每个 atom 中有哪些 basin. 
+`-r` 用于控制边界归属复核，其含义在历史版本中发生过多次变化：
 
+- `-r N`：`N` 为正整数时，复核 `N` 次；早期版本中，`N=0` 表示关闭复核。
+- `-r <-1|-2|auto>`：`auto` 被解析为 `-1`。两种方法都会逐轮复核，直到一轮中没有格点需要变更 *basin* 归属。区别在于，`-2` 每轮检查所有边界点，`-1` 则在后续轮次中只检查上一轮被重置格点的 $3\times3\times3$ 邻域。复核过程可能不收敛，此时可以改用 `-r N` 限制次数。
+- 后来，`-r 0` 改为复核一次后退出。
+- 在 1.05 版本中，代码强制只复核一次，因此 `-r -1` 和 `-r -2` 的区别也消失了。
 
-### `-p` 
-> "我想看看 bader volume 的表面" 
-> 
-> --- 识别并绘制表面需要花一些功夫, 但是 `bader` 里对每个格点都进行了染色 (这个格点属于哪个 atom, 哪个 basin), 你可以直接查看某个 atom/basin 下都有哪些格点, 通过观察它的空间占据脑补 bader volume 的表面形状.  
+默认的 `-m known` 让 *flow* 到达已有归属的格点后停止，这也是算法具有线性时间复杂度的原因。使用 `-m max` 后，*flow* 一直走到 *basin* 的极大值点才终止；这样一来使得划分结果不依赖划分过程。
 
-这就是 `-p` 参数的作用, 它会控制 `bader` 输出格点数据, 输出文件格式与输入文件相同. 
-可以想见每个文件都很大, 所以只有当明确 `-p` 指定时才会写出这些文件. 
+`weight` 的划分在数学上天然是唯一的，无需进行边界归属复核，不受上述格点方向“吸附”问题影响，但计算可能更耗时。
 
-`-p` 有很多选项, 这里会介绍以下选项 
+### 输出
+
+除在标准输出（`stdout`）中显示计算进度外，`bader` 默认还会生成 `ACF.dat`、`BCF.dat` 和 `AVF.dat`：
+
+- `ACF.dat`：按原子汇总 *Bader volume* 内的积分电子数，是用户通常最关心的文件。
+- `BCF.dat`：按 *basin* 汇总信息。一个原子附近可能有多个密度极大值点，这在赝势计算中尤其常见，因为赝价电子的电荷密度很有可能在原子中心凹陷。程序先按极大值点划分 *basin*，再将各 *basin* 分配给最近的原子，并合并为该原子的 *Bader volume*。因此，`BCF.dat` 通常比 `ACF.dat` 有更多条数据。
+- `AVF.dat`：记录每个原子包含哪些 *basin*，连接了上面两个文件中的数据条目。
+
+文件详细信息可以参看[输出文件各列含义说明](#acfdatbcfdatavfdat-的各列含义)
+
+#### `-p`：输出划分网格
+
+> “我想看看 Bader volume 的表面。”
+
+识别和绘制表面需要一些处理。不过，`bader` 为每个格点记录了原子和 *basin* 编号。你可以查看某个原子或 *basin* 包含哪些格点，通过它们占据的空间脑补表面的形状。
+
+`-p` 控制两类数据的输出：格点所属的原子或 *basin* 编号，以及原子 *Bader volume* 或 *basin* 内的电荷密度。电荷密度文件在所选范围内保留输入密度，其余格点置零。
+
+输出文件使用与输入相同的网格和文件格式。这些文件可能占用较多硬盘空间，只有通过 `-p` 明确指定时才会生成。
+
+选项中的 `atom` 对应原子 *Bader volume*，即分配给同一原子的 *basin* 的合集；`bader` 对应单个 *basin*。本文介绍以下选项：
+
+```text
+-p <atom_index|bader_index>
+-p <all_atom|all_bader>
+-p <sel_atom|sel_bader> <volume list or range>
+-p <sum_atom|sum_bader> <volume list or range>
 ```
--p < atom_index | bader_index >
--p < all_atom | all_bader >
--p < sel_atom | sel_bader > <volume list or range>
--p < sum_atom | sum_bader > <volume list or range>
+
+|            选项             |    后续参数    |                    文件中的数值                     |            文件数量             |
+| :-------------------------: | :------------: | :-------------------------------------------------: | :-----------------------------: |
+| `atom_index`、`bader_index` |     不接受     |          每个格点所属的原子或 *basin* 编号          |            一个文件             |
+|   `all_atom`、`all_bader`   |     不接受     |    各原子 *Bader volume* 或 *basin* 内的电荷密度    |   每个原子或 *basin* 一个文件   |
+|   `sel_atom`、`sel_bader`   | 编号列表或范围 |   指定原子 *Bader volume* 或 *basin* 内的电荷密度   | 每个所选原子或 *basin* 一个文件 |
+|   `sum_atom`、`sum_bader`   | 编号列表或范围 | 所选原子 *Bader volume* 或 *basin* 合集内的电荷密度 |            一个文件             |
+
+
+以 `sel_atom` 为例，编号列表或范围参数的合法写法如下：
+
+```text
+-p sel_atom 1
+-p sel_atom 1 3 5
+-p sel_atom 1-3
 ```
 
-1. `atom/bader_index` 后面不接受参数, 会输出一个 .cube/CHGCAR 格式格点文件, 每个格点记录的是这个格点属于哪个 Atom/Basin index. 
-2. `all_atom/bader` 后面不接受参数, 直接输出全部文件
-    1. 输出内容为每个 Atom/Basin 划分体积内的电荷密度分布, 每个划分输出一个 .cube或CHGCAR 格式文件 (取决于输入文件格式) . 
-	2. `bader <chargefile> -p all_atom -p all_bader` 便是终极全面, 终极占硬盘存储空间的输出参数口牙. 
-3. `sel_atom/bader` 不同于 `all`, 会有选择地输出; 而 `sum` 的处理与 `sel` 类似, 只不过会求和后只输出一个文件
-	1. 后面可以跟的合法参数示例:
-		1. `-p sel_atom 1`
-		2. `-p sel_atom 1 3 5`
-		3. `-p sel_atom 1-3`
-    2. 未定义行为, 导致程序崩溃的参数示例: 
-        1. `-p sel_atom 1 2-3`
-        2. `-p sel_atom 9-5`
-        3. `-p sel_atom 1-2 -p sel_atom 3` (对 allocated 数组再次 allocate)
+以下参数写法会导致报错退出或运行时错误：
 
-> "如果我 `bader CHGCAR -p sel_atom 1-3 -p all_atom -p sum_atom 4 8`会如何? " 
->
-> --- 请看 VCR
+```text
+-p sel_atom 1 2-3             
+-p sel_atom 9-5               # 起点大于终点，未选中任何原子，程序报错退出
+-p sel_atom 1-2 -p sel_atom 3 # 重复指定 sel_atom，对已分配的数组再次 allocate，触发运行时错误
+```
+
+> “如果运行 `bader CHGCAR -p sel_atom 1-3 -p all_atom -p sum_atom 4 8`，会发生什么？”
+
+请看VCR：
+
+```fortran
+! bader/options_mod.f90：
+    opts%print_sel_atom = .TRUE.
+    opts%selanum        = 3
+    ALLOCATE(opts%selavol(opts%selanum))
+    opts%selavol        = [1, 2, 3]
+
+    opts%print_all_atom = .TRUE.
+
+    opts%print_sum_atom = .TRUE.
+    opts%sumanum        = 2
+    ALLOCATE(opts%sumavol(opts%sumanum))
+    opts%sumavol        = [4, 8]
+
+! bader/main.f90：
+    IF (opts%print_all_bader)    CALL write_all_bader(bdr,opts,ions,chgval)
+    IF (opts%print_all_atom)     CALL write_all_atom(bdr,opts,ions,chgval)
+    IF (opts%print_sel_atom)     CALL write_sel_atom(bdr,opts,ions,chgval)
+    IF (opts%print_sel_bader)    CALL write_sel_bader(bdr,opts,ions,chgval)
+    IF (opts%print_sum_atom)     CALL write_sum_atom(bdr,opts,ions,chgval)
+    IF (opts%print_sum_bader)    CALL write_sum_bader(bdr,opts,ions,chgval)
+    IF (opts%print_bader_index)  CALL write_bader_index(bdr,opts,ions,chgval)
+    IF (opts%print_atom_index)   CALL write_atom_index(bdr,opts,ions,chgval)
+```
+
+程序先输出所有原子的划分网格数据，再输出第 1–3 号原子的网格数据（覆盖同名文件），最后合并第 4、8 号原子的划分并输出。
+
+## 算法
+
+### 定义
+
+坦率的说我还没弄明白 `bader` 源码中怎么定义 “bader volume”，本文的术语可能与 Henkelman 课题组的习惯有所不同。
+因此，下面会先声明几个术语在本文中的含义（其中一些已经在前文出现）。
+
+![图 1，来自 Tang2009](../assets/Tang2009_1.png)
+
+#### *flow*
+
+按照 Bader 的定义，空间中的点沿电荷密度梯度流动，最终到达某个极大值点。本文将这条流线称为 *flow*。
+
+对于离散网格，如上图（a），点只能在格点间移动，每一步选择近邻中电荷密度上升最快的方向。当所有近邻的密度都不再上升时，移动停止。得到的折线（如图（a）中的 `flow1`）就是离散网格上的 *flow*。
+
+后续 *flow* 不必一直走到极大值点：一旦进入已有 *flow* 的路径，就可以继承其最终归属，如图（a）中的 `flow2`。
+
+#### *basin*
+
+当所有点都知道自己最终会流向哪个极大值点时，我们就完成了空间网格的划分。
+
+本文将每个区域称为 *basin*，意为流汇聚的地方。嗯，水往低处流，但这里的 *flow* 往高处流。
+
+#### *Bader volume*（原子区域）
+
+极大值点可能多于原子。程序需要确定每个 *basin* 属于哪个原子，再合并属于同一原子的 *basin*；本文将合并后的区域称为该原子的 *Bader volume*[^badervolume]。
+
+[^badervolume]: Henkelman 课题组语境中的 *Bader volume* 大致对应本文使用的 *basin*。
+
+### [Henkelman2006](https://doi.org/10.1016/j.commatsci.2005.04.010)
+
+下面我们从 Henkelman2006 的算法开始介绍。
+哦，上面的定义已经把算法讲完了。
+
+由于每个格点基本只处理一次，计算时间随格点数量线性增长，这是一个很高效的算法。
+
+移动方向只能从 26 个方向中选择，真实梯度方向会“吸附”到这些方向上。[Sanville2007](https://doi.org/10.1002/jcc.20575) 指出，这种离散化与格点移动方式会带来较大的电荷积分误差，使分子的 Bader 电荷分析结果依赖分子取向。
+这种取向依赖并不符合物理，增加网格密度也无法有效消除它。官网提供的 `C2H4a`、`C2H4b` 两个示例展示了这一问题。
+
+### [Tang2009](https://doi.org/10.1088/0953-8984/21/8/084204)
+
+![图 2，来自 Tang2009](../assets/Tang2009_2.png)
+
+图（a）展示了原始算法因移动方向“吸附”而导致的 *basin* 划分错误，图（b）展示了 Tang2009 的修正方法。
+格点移动时，同时记录梯度步矢量 $\vec{r}_\text{grad}$ 与格点步矢量 $\vec{r}_\text{grid}$ 之间的偏离矢量，第一步后为 $\Delta\vec{r}=\Delta\vec{r}_1$。
+每次移动都累加偏离矢量，如第二步后有 $\Delta\vec{r}=\Delta\vec{r}_1+\Delta\vec{r}_2$。当累积偏离量足够大时，就执行修正步（correction step），调整移动位置，并更新偏离矢量为 $\Delta\vec{r}={\Delta\vec{r}_2}'$。
+
+这样，虽然仍在格点间移动，路径却能更接近真实的电荷密度梯度流线。
+
+不过，每条 *flow* 的偏离量都从 0 开始累积，因此结果可能依赖起始格点和处理顺序，划分结果并不唯一，也不一定是最佳结果。算法会在 *basin* 划分完成后复核（refine）边界格点的归属，以缓解这一问题。
+
+### [Yu2011](https://doi.org/10.1063/1.3553716)
+
+该论文从更理论的角度出发，考察初始时均匀分布在一个 voxel 内的点，沿电荷密度梯度流动后会到达哪些极大值点。
+从连续空间到离散格点的离散化过程中，格点之间的流量对应于 Voronoi 剖分所得 voxel 多面体公共面的通量。
+
+在这个定义下，一个格点不必完全属于单一 *basin*，而可以按流量比例分属多个 *basin*。引入归属权重后，可以唯一确定划分。
+分析离散化中的近似，还可以确定 Bader 电荷积分误差对网格间距的收敛阶数。该算法也容易扩展到非均匀网格。
+
+具体算法中，会先将格点按电荷密度排序，再从高到低逐点处理。这个过程相当于从各 *basin* 的极大值点出发反向流动，可以在一次搜寻里自然地识别极大值点，分配 *basin* 归属权重，也具有（准）线性复杂度，非常妙。
+
+> 上面是帮助快速建立理解的说法。严肃地说，程序实际上是
+> 1. 第一次从高到低搜寻，可以识别极大值点，并自然地确定每个格点向近邻密度上升格点的权重转移比例
+> 2. 后续的 *basin* 次重复搜寻，确定每个格点归属于各个 *basin* 的权重。
 > 
-> ```fortran
-> ! bader/options_mod.f90
->     opts%print_sel_atom = .TRUE.
->     opts%selanum = 3
->     ALLOCATE(opts%selavol(opts%selanum))
->     opts%selavol = [1, 2, 3]
->     ! |
->     opts%print_all_atom = .TRUE.
->     ! |
->     opts%print_sum_atom = .TRUE.
->     opts%sumanum = 2
->     ALLOCATE(opts%sumavol(opts%sumanum))
->     opts%sumavol = [4, 8]
-> 
-> ! bader/main.f90
->      IF (opts%print_all_bader) CALL write_all_bader(bdr,opts,ions,chgval)
->      IF (opts%print_all_atom) CALL write_all_atom(bdr,opts,ions,chgval)
->      IF (opts%print_sel_atom) CALL write_sel_atom(bdr,opts,ions,chgval)
->      IF (opts%print_sel_bader) CALL write_sel_bader(bdr,opts,ions,chgval)
->      IF (opts%print_sum_atom) CALL write_sum_atom(bdr,opts,ions,chgval)
->      IF (opts%print_sum_bader) CALL write_sum_bader(bdr,opts,ions,chgval)
->      IF (opts%print_bader_index) CALL write_bader_index(bdr,opts,ions,chgval)
->      IF (opts%print_atom_index) CALL write_atom_index(bdr,opts,ions,chgval)
-> ```
-> 
-> 所以会是先输出所有原子的划分网格数据, 然后再输出 1-3 号原子划分网格数据 (覆盖已经存在的 1-3 号原子网格数据文件), 然后再输出 4 8 号原子网格划分合并后的网格数据. 
+> 随着体系增大，*basin* 数量 $B$ 和格点数量 $N$ 通常都会增加。这份程序实现对每个 *basin* 都扫描一遍全部格点以确定权重，时间复杂度应为 $O(N \log N+BN) > O(N)$；空间复杂度为 $O(N)$。
+> 但是依旧非常妙。
 
+## `ACF.dat`、`BCF.dat`、`AVF.dat` 的各列含义
 
-# 算法
+以下说明对应 `bader` 1.05 中的输出例程 `bader_mod.f90` 的 `bader_output`。
+`ACF.dat` 按原子汇总，`BCF.dat` 按 *basin* 列出，`AVF.dat` 记录原子与 *basin* 的对应关系。
 
+### `ACF.dat`
 
-## 定义
-说实话我没搞懂 `bader` 源码中对 bader volume 的定义, 行文中的用词有可能和 Henkelman 课题组的习惯有所不同. 
-所以在此提醒读者, 我会接下来使用以下术语来指代 `bader` 算法中的某些概念 (当然, 这些术语在本文较早的时候就被使用了)
+|  列   |     表头     |                        含义                        |
+| :---: | :----------: | :------------------------------------------------: |
+|   1   |     `#`      |   原子编号，从 1 开始，与输入文件的原子顺序一致    |
+|  2–4  |   `X Y Z`    |                  原子的笛卡尔坐标                  |
+|   5   |   `CHARGE`   |    分配给该原子的所有 *basin* 中的电荷密度积分     |
+|   6   |  `MIN DIST`  | 原子到其所属区域边界格点的最短距离，考虑周期性边界 |
+|   7   | `ATOMIC VOL` |        分配给该原子的所有 *basin* 的总体积         |
 
-![图1, 来自Tang2009](../assets/Tang2009_1.png)
+`CHARGE` 是输入电荷密度的积分结果，即“Bader charge”量，并非原子的电荷转移量。`bader` 本身不知道每个原子的价电子数量。
 
-### *flow*
-在 Bader 的定义中, 空间某点沿着的电荷密度的梯度流动, 最终会停在某个极大值点. 
-我们定义这条流线为一个 *flow*. 
+### `BCF.dat`
 
-对于离散网格的情况, 如上图(a), 我们让空间点在网格上移动, 每一步移动的目标是近邻格点中电荷密度数值上升最快的方向. 这样的移动会在近邻格点电荷密度无法上升时 (到达极大值点) 停下来, 这时候得到一条连线 (如上图(a) 中的 flow1), 我们称为离散网格版本的 *flow*. 
+|  列   |    表头    |                         含义                         |
+| :---: | :--------: | :--------------------------------------------------: |
+|   1   |    `#`     |               *basin* 序号，从 1 开始                |
+|  2–4  |  `X Y Z`   |        该 *basin* 的密度极大值点的笛卡尔坐标         |
+|   5   |  `CHARGE`  |              该 *basin* 内的积分电子数               |
+|   6   |   `ATOM`   | 该 *basin* 被分配给的原子编号，对应 `ACF.dat` 第一列 |
+|   7   | `DISTANCE` |             该极大值点到所分配原子的距离             |
 
-可以注意到, 在这样的算法下, 接下来的 flow 无需直到到达电荷密度极大值才停下来, 当它发现它走到其他 flow 走过的路径上, 它就已经知道自己最终会流到哪个极值点了. 如上图(a) 中的 flow2. 
+### `AVF.dat`
 
-### *basin*
-当所有点都知道自己最终会流到哪个极大值点, 我们便完成了对空间网格的划分. 
-
-我们把划分后的每个区域成为一个 *basin*, 意为流汇聚的地方. (嗯, 水往低处流, 但是这里的 flow 往高处流)
-
-### *bader volume*
-极大值点可能会比原子更多, 接下来我们需要决定每个 *basin* 属于哪个原子, 将属于相同原子的 *basin* 合并后的体积, 我们称为这个原子的 *bader volume*[^badervolume].
-
-[^badervolume]: 我使用的 *basin* 大约对应 Henkelman 课题组语境下的 *bader volume*
-
-
-## [Henkelman2006](10.1016/j.commatsci.2005.04.010)
-有了上述定义后, 我们现在可以介绍 Henkelman2006 的算法了. 
-哦, 在上面的定义已经把算法讲完了. 
-因为基本上每个格点都只触及一次, 随着体系的增加, 算法计算时间也是随之线性增加的, 这是非常高效的算法. 
-
-你会发现这个算法过程中, 空间点移动方向只能在 26 个方向中选择, 真实梯度方向会"吸附"到这26个方向中. 
-[Sanville2007](10.1002/jcc.20575) 论文中指出, 这样的离散化+格点移动算法会带来极大的电荷积分误差, 
-分子的bader charge分析中甚至会表现出分子取向的依赖性, 这是不物理的. 
-增加网格密度也无法有效改善这种情况. 
-官网提供的 examples 中, C2H4a C2H4b 两个压缩包便可以说明此问题. 
-
-## [Tang2009](10.1088/0953-8984/21/8/084204) 
-![图2, 来自Tang2009](../assets/Tang2009_2.png)
-图中 (a) 展示了 Henkelman2006 算法因为移动方向吸附导致的 basin 划分错误, 图 (b) 展示了 Tang2009 的修正方法: 随着格点移动, 同时记录一个梯度方向 $\vec{r}_\text{grad}$ 与移动方向 $\vec{r}_\text{grid}$ 之间的偏离矢量 $\Delta \vec{r}=\Delta \vec{r}_1$ , 每次移动都累计偏离矢量 ($\Delta \vec{r}=\Delta \vec{r}_1+\Delta \vec{r}_2$), 积累的偏离量会在足够大的时候改变原本算法的移动方向 (correction step), 并重新积累偏移矢量 $\Delta \vec{r}={\Delta \vec{r}_2}'$. 
-
-这样一来, 虽然我们依旧在格点间移动, 但是已经几乎是按照真实的电荷密度梯度方向移动了. 
-
-不过这个方法稍有瑕疵的地方是, 初始移动时偏离误差从 0 开始积累, 最终结果可能会取决于初始格点的选择, 划分结果不是唯一的. 
-该算法会在 Basin 划分完成后, 针对边界格点进行 refine 缓解这个问题. 
-
-## [Yu2011](10.1063/1.3553716)
-该论文从更理论的角度出发. 
-考察初始时一个 voxel 内均匀分布的点, 在沿着电荷密度梯度概率流守恒地流动后, 最终会到达哪些极大值点. 
-从连续空间点到离散格点的离散化过程, 一个格点到另一个格点的流量, 是 voronoi 剖分下的该格点 voxel 多面体对应面的通量. 
-
-这个定义下, 一个格点不必属于某个 basin, 而是可以自然按照流量大小属于多个 basin. 
-通过给格点划分引入了 weight 的概念, 可以唯一地确定划分. 
-通过分析这个离散化过程中做了什么近似, 可以指出该算法bader charge计算值与真实值之间的误差 与网格密度精度的 阶数关系. 
-该算法也可以很容易地扩展到非均匀网格上. 
-
-具体算法实现中, 会先对电荷密度值排序, 然后从大到小逐格点审查. 这样等价于从每个 basin 极大值点出发, 向外流动, 自然地分配basin归属权重, 依旧 (准)线性scaling, 非常妙. 
-
-
-# `ACF.dat`, `BCF.dat`, `AVF.dat` 每列含义
-
-以下对应 Bader 1.05 的输出例程 `bader_mod.f90` 中的 `bader_output`. `ACF.dat` 按原子汇总, `BCF.dat` 按 basin 列出, `AVF.dat` 记录原子与 basin 的对应关系.
-
-## `ACF.dat`
-
-| 列 | 表头 | 含义 | 源码变量 |
-|---|---|---|---|
-| 1 | `#` | 原子编号，从 1 开始，与输入文件的原子顺序一致 | `i` |
-| 2–4 | `X Y Z` | 原子的笛卡尔坐标 | `ions%r_car(i,:)` |
-| 5 | `CHARGE` | 分配给该原子的所有 basin 中的电子密度积分 | `bdr%ionchg(i)` |
-| 6 | `MIN DIST` | 原子到其所属区域边界格点的最短距离，考虑周期性边界 | `bdr%minsurfdist(i)` |
-| 7 | `ATOMIC VOL` | 分配给该原子的所有 basin 的总体积 | `bdr%ionvol(i)` |
-
-注意, `CHARGE` 是输入文件电子密度的积分结果, 不是原子的全电子电荷量或电荷转移量. bader 本身也不清楚
-1. 输入文件是否是全电子数据
-2. 每个原子原始的价电子/芯电子配置
-
-## `BCF.dat`
-
-| 列 | 表头 | 含义 | 源码变量 |
-|---|---|---|---|
-| 1 | `#` | 筛选后连续编号的 basin 序号，从 1 开始 | `bdimsig` |
-| 2–4 | `X Y Z` | 该 basin 的密度极大值点的笛卡尔坐标 | `bdr%volpos_car(i,:)` |
-| 5 | `CHARGE` | 该 basin 内的积分电子数 | `bdr%volchg(i)` |
-| 6 | `ATOM` | 该 basin 被分配给的原子编号，对应 `ACF.dat` 第一列 | `bdr%nnion(i)` |
-| 7 | `DISTANCE` | 该极大值点到所分配原子的距离，考虑周期性边界 | `bdr%iondist(i)` |
-
-
-## `AVF.dat`
-
-| 部分 | 表头或内容 | 含义 | 源码变量 |
-|---|---|---|---|
-| 第一项 | `Atom` | 原子编号，对应 `ACF.dat` 第一列 | `i` |
-| 分隔符 | `...` | 固定的排版分隔符 | 无 |
-| 后续各项 | `Volume(s)` | 属于该原子的 basin 编号列表，对应 `BCF.dat` 第一列 | `rck(1:cc)` |
+|   部分   | 表头或内容  |                         含义                         |
+| :------: | :---------: | :--------------------------------------------------: |
+|  第一项  |   `Atom`    |           原子编号，对应 `ACF.dat` 第一列            |
+|  分隔符  |    `...`    |                          -                           |
+| 后续各项 | `Volume(s)` | 属于该原子的 *basin* 编号列表，对应 `BCF.dat` 第一列 |
 
 ```text
    Atom                     Volume(s)
      5   ...       6    7    8    9
 ```
 
-如果一个原子没有 basin 被划归其中, 则不会出现在这个文件里.
+没有 *basin* 被分配给的原子不会出现在这个文件中，`-p all_atom`、`-p all_bader` 的输出也会受此影响。
 
-## 单位与文件之间的关系
+### 单位与文件之间的关系
 
-| 量 | 标准 VASP `CHGCAR` 输入 | 标准 Gaussian cube 输入 |
-|---|---|---|
-| 坐标与距离 | Å | bohr |
-| 体积 | Å³ | bohr³ |
-| `CHARGE` | 电子数 | 电子数 |
+|     量     | 标准 VASP `CHGCAR` 输入 | 标准 Gaussian `.cube` 输入 |
+| :--------: | :---------------------: | :------------------------: |
+| 坐标与距离 |            Å            |            bohr            |
+|    体积    |           Å³            |           bohr³            |
+|  `CHARGE`  |         电子数          |           电子数           |
