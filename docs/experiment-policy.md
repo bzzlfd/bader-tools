@@ -2,7 +2,7 @@
 
 ## 1. Scope and Operating Model
 
-This policy covers experiments in project `scratch/` directories and dedicated external temporary roots. Its purpose is to make experimental workspaces identifiable and manageable throughout their lifecycle, so artifacts can be resumed, retained, or safely cleaned up while protecting original inputs, useful knowledge, and required evidence.
+This policy covers experiments in project `scratch/` directories and dedicated external temporary roots used as exceptions under §2. Its purpose is to make experimental workspaces identifiable and manageable throughout their lifecycle, so artifacts can be resumed, retained, or safely cleaned up while protecting original inputs, useful knowledge, and required evidence.
 
 | Location | Purpose |
 |---|---|
@@ -11,6 +11,8 @@ This policy covers experiments in project `scratch/` directories and dedicated e
 | `note/` | Durable explanations, conclusions, limitations, and decisions |
 
 Use established project locations where they differ. Adapt to the language and build system, and create directories only when needed. Each experiment directory represents one investigation and one lifecycle unit.
+
+Short-lived runtime temporary files created by tools or commands do not automatically constitute an independent experiment workspace. If they become materials needed for retention, interpretation, or resumption of an experiment, bring them under this policy's workspace and evidence requirements.
 
 ### Stage-Scoped Instructions
 
@@ -53,6 +55,7 @@ Apply these throughout the lifecycle:
 Evaluate each experiment directory as a lifecycle unit rather than dismantling evidence from an unevaluated experiment. Before deleting, verify:
 
 - The resolved target is the intended experiment directory inside a known managed scratch root, not the root itself, and deletion cannot affect outside paths.
+- For an external workspace, the managed root is a confirmed dedicated temporary root for the current user and project (§2). Do not select roots using wildcard patterns or treat `/tmp` itself as a managed root. External paths outside confirmed dedicated roots may be reported for review, but this policy does not authorize their deletion.
 - Ownership or cleanup authority is established and no relevant active task or process is using it.
 - An explicit disposal decision or applicable cleanup policy authorizes disposal, including any original user inputs.
 - Valuable knowledge and required evidence have been preserved, or their disposal has been explicitly judged acceptable. Declining additional tests or notes does not by itself make original evidence disposable.
@@ -80,7 +83,11 @@ Identify the question, requested result, and available inputs. Create or adopt a
 
 ### Workspace Identity
 
-Prefer project `scratch/`. Outside the repository, use a dedicated per-user temporary root, such as `/tmp/ai-$USER/$project/`, with restrictive permissions where appropriate. Do not scatter artifacts across the project root or directly across `/tmp`. System temporary storage may be removed during reboot or maintenance; preserve valuable work in storage suited to its recovery needs.
+Create new experiment workspaces in project `scratch/`. Use an external temporary workspace only when the project workspace is not writable, the tool or experimental objective requires a specific temporary environment, or a verified storage constraint justifies the exception. Record the specific reason in the experiment's minimal local context; all other initialization, recovery, and cleanup requirements still apply.
+
+For an external exception, use a dedicated temporary root for the current user and project, such as `/tmp/ai-$USER/$project/`, with restrictive permissions where appropriate. This example is a portable path template: substitute verified user and project values and confirm the exact root. Never interpret it as a wildcard such as `/tmp/ai-*/*` or use it to select other users' or projects' roots.
+
+Do not scatter artifacts across the project root or directly across `/tmp`. Verify the temporary storage's relevant properties and available capacity rather than assuming it is a separate disk or suitable for large outputs. System temporary storage may be removed during reboot or maintenance; preserve valuable work in storage suited to its recovery needs.
 
 Name each independent experiment directory:
 
@@ -92,7 +99,7 @@ YYYYMMDD-HHMM-topic-commitid-uniqueid/
 - Choose a short topic and an abbreviated Git HEAD hash (normally 8–12 characters), or `nogit` when unavailable.
 - Generate an independent random identifier: the commit identifies a baseline, not an experiment instance.
 
-Allocate new directories atomically, for example with `mktemp -d`. Related steps may share a directory; a substantially different objective needs a new one. Keep inputs, scripts, outputs, and evidence together, adding subdirectories only as needed. Do not reuse another active experiment's workspace.
+Allocate new directories atomically within the chosen managed root, for example with `mktemp -d` and an explicit path template. Related steps may share a directory; a substantially different objective needs a new one. Keep inputs, scripts, outputs, and evidence together, adding subdirectories only as needed. Do not reuse another active experiment's workspace.
 
 Write the minimal local context immediately after allocation, before experimental work. If interrupted before this record exists, later review must treat the directory as unidentified rather than infer that it is disposable.
 
@@ -252,10 +259,10 @@ Use this separate maintenance procedure when the user requests review or cleanup
 
 A review request authorizes inspection and recommendations. An explicit cleanup request or established user cleanup policy authorizes qualifying disposal within its scope, without asking again for each directory.
 
-1. Establish the requested roots, scope, and disposal authority. Inspect directories without resetting their identity or inferring disposal authority from their names. Use age only to prioritize review.
+1. Establish the requested roots, scope, and disposal authority. For project workspace review or cleanup, also identify external experiment directories referenced in available records for inspection; do not broadly scan `/tmp` or expand deletion authority because of these references. Inspect directories without resetting their identity or inferring disposal authority from their names. Use age only to prioritize review.
 2. Compare available records with actual files, partial outputs, relevant tasks and processes (including jobs that outlive an agent session), and external dependencies. Apply §3's recovery checks as needed; record missing evidence as uncertainty.
 3. Classify each directory for this review using the table below. Keep previous decisions distinct from current observations; these categories belong in the review report, not new metadata fields.
-4. Carry out authorized actions, applying the common Cleanup Checks (§1) before deletion. Briefly report what was removed, retained paths and reasons, and concrete unresolved decisions. Update existing records only for verified corrections or actual decisions; a separate report file is optional.
+4. Carry out authorized actions, applying the common Cleanup Checks (§1) before deletion. Briefly report what was removed, retained paths and reasons, and concrete unresolved decisions. For referenced external workspaces, include their exact paths, whether they still exist, and whether cleanup is needed. Update existing records only for verified corrections or actual decisions; a separate report file is optional.
 
 | Current observation | Handling |
 |---|---|
