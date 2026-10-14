@@ -1,39 +1,47 @@
 #!/usr/bin/env bash
-# Regenerate the all-electron core charge stored in an ONCVPSP UPF file.
-#
-# The embedded <PP_INPUTFILE> is rerun with the appropriate patched ONCVPSP
-# executable.  UPF relativistic metadata selects one of:
+# Rerun ONCVPSP on the generator input embedded in an ONCVPSP UPF file
+# and save its report (the generator's stdout).  The <PP_INPUTFILE> block is
+# extracted and fed to the appropriate executable; UPF relativistic
+# metadata selects one of:
 #   scalar          oncvpsp.x
 #   full            oncvpspr.x (or upstream oncvpsp_r.x)
 #   nonrelativistic oncvpspnr.x (or upstream oncvpsp_nr.x)
-# The resulting !R report is converted by extract_oncv_corecharge.sh, which
-# removes ONCVPSP's 4*pi factor exactly once.
+# No core-charge extraction is performed here: the report is converted to a
+# .corecharge table separately by extract_oncv_corecharge.sh, which removes
+# ONCVPSP's 4*pi factor exactly once.
 
 set -eu
 
 RUN_TIMEOUT=300
-script_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-extractor=$script_dir/extract_oncv_corecharge.sh
 
 usage() {
     cat <<'EOF'
-Usage: upf2corecharge.sh FILE.UPF [options]
+Usage: run_oncvpsp_from_upf.sh FILE.UPF [options]
 
-Rerun patched ONCVPSP on the input embedded in a UPF file and convert its !R
-AE-core-charge block to a .corecharge table.  Columns are r [bohr] and
-rho_core [e/bohr^3]; the ONCVPSP 4*pi factor is removed.
+Extract the <PP_INPUTFILE> generator input embedded in a UPF file and rerun
+ONCVPSP with it; save the generator's report (its stdout). The report
+is not processed further here. Convert its AE-core-charge block to a
+.corecharge table (r [bohr], rho_core [e/bohr^3], 4*pi factor removed) as a
+separate step, e.g.
+  extract_oncv_corecharge.sh Na.oncvpsp.stdout --source-upf Na.UPF -o Na.corecharge
 
 Options:
-  -o, --output OUT   output file (default: UPF name with .UPF -> .corecharge)
+  -o, --output PATH  write the report to PATH ('-' means stdout); default:
+                     replace .UPF (case-insensitive) with .oncvpsp.stdout,
+                     or append .oncvpsp.stdout if the suffix is absent
       --oncvpsp PATH executable file to force, or installation directory in
                      which to select the required version
-      --keep-tmp DIR run in DIR instead of a temporary directory and retain
-                     the generator input, stdout, and stderr
+      --keep-workdir DIR
+                     run in a new DIR and retain oncvpsp.in, oncvpsp.stdout,
+                     oncvpsp.stderr and any generator-created files, even
+                     on failure; DIR must not already exist, and its
+                     parent directory must exist
   -h, --help         show this help
 
 Without --oncvpsp, a non-empty ONCVPSP_DIR selects the installation directory;
-otherwise the required executable is found in PATH.
-use --oncvpsp FILE to force an executable.
+otherwise the required executable is found in PATH. An executable FILE
+forces that program (type inference is advisory); a directory requires
+unambiguous UPF metadata for automatic selection.
 
 Type inference ignores PP_INFO. Standard SOC quantum numbers must agree with
 has_so; PWmat 10/20/30 channels require has_so=false. Metadata conflicts stop
@@ -41,6 +49,16 @@ automatic selection, but --oncvpsp FILE overrides inference.
 
 The script inherits its runtime environment.  Load modules or set compiler
 runtime variables in the calling shell or job script, not here.
+
+By default, run in a unique .oncvpsp-work.XXXXXX directory under the calling
+directory and remove it on exit. Temporary files are not placed in /tmp.
+Reports are published only after a successful run. File output is staged
+beside its destination before replacement. Diagnostics go to stderr.
+
+Examples:
+  run_oncvpsp_from_upf.sh Na.UPF
+  run_oncvpsp_from_upf.sh Na.UPF --keep-workdir Na-run -o Na.out
+  run_oncvpsp_from_upf.sh Na.UPF -o - | extract_oncv_corecharge.sh -o Na.corecharge
 EOF
 }
 
@@ -250,20 +268,20 @@ EOF
     # Stage 2: reconcile has_so-prime with relativistic. Never resolve a conflict
     # by choosing a convenient executable; --oncvpsp FILE remains an override.
     upf_type=unknown
-    inference_reason="no recognized PP_HEADER relativistic value or structured SOC evidence (has_so'=$effective_has_so)"
+    inference_reason="no recognized PP_HEADER relativistic value or structured SOC evidence (effective_has_so=$effective_has_so)"
     if [[ $header_types == *,* ]]; then
         inference_conflict="${inference_conflict:+$inference_conflict; }conflicting PP_HEADER relativistic values: $header_types"
     fi
     if [ "$effective_has_so" = true ]; then
         upf_type=full
-        inference_reason="has_so'=true: $soc_reason"
+        inference_reason="effective_has_so=true: $soc_reason"
     elif [ -n "$header_types" ] && [[ $header_types != *,* ]]; then
         upf_type=$header_types
-        inference_reason="PP_HEADER relativistic=$header_types (has_so'=$effective_has_so)"
+        inference_reason="PP_HEADER relativistic=$header_types (effective_has_so=$effective_has_so)"
     fi
     if [ "$effective_has_so" = true ] && \
        [[ ,$header_types, == *,scalar,* || ,$header_types, == *,nonrelativistic,* ]]; then
-        inference_conflict="${inference_conflict:+$inference_conflict; }PP_HEADER says $header_types but has_so'=true"
+        inference_conflict="${inference_conflict:+$inference_conflict; }PP_HEADER says $header_types but effective_has_so=true"
     fi
 }
 
@@ -303,22 +321,28 @@ find_in_path() {
     die "no executable for $upf_type UPF found in PATH (looked for: $candidates)"
 }
 
-upf= out= keeptmp= oncv_location= oncv_option_set=false
+upf= out= keep_workdir= oncv_location= oncv_option_set=false
 while [ $# -gt 0 ]; do
     case $1 in
         -o|--output) [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires an argument"; out=$2; shift 2 ;;
         --oncvpsp)   [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires a non-empty path"; oncv_location=$2; oncv_option_set=true; shift 2 ;;
-        --keep-tmp)  [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires an argument"; keeptmp=$2; shift 2 ;;
+        --keep-workdir) [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires a directory"; keep_workdir=$2; shift 2 ;;
         -h|--help)   usage; exit 0 ;;
+        --)          shift
+                     [ $# -eq 1 ] && [ -z "$upf" ] || die "expected one UPF file after --"
+                     upf=$1; shift ;;
         -*)          die "unknown option: $1 (try --help)" ;;
         *) [ -z "$upf" ] || die "unexpected extra argument: $1"; upf=$1; shift ;;
     esac
 done
 
 [ -n "$upf" ] || die "missing UPF argument (try --help)"
-[ -f "$upf" ] || die "no such file: $upf"
-[ -f "$extractor" ] || die "missing extraction script: $extractor"
-out=${out:-${upf%.[Uu][Pp][Ff]}.corecharge}
+[ -f "$upf" ] && [ -r "$upf" ] || die "cannot read UPF file: $upf"
+out=${out:-${upf%.[Uu][Pp][Ff]}.oncvpsp.stdout}
+if [ "$out" != - ]; then
+    [ ! -d "$out" ] || die "output is a directory: $out"
+    [[ ! "$upf" -ef "$out" ]] || die "output would overwrite the input UPF: $out"
+fi
 
 detect_upf_type
 printf 'UPF inference: %s (%s)\n' "$upf_type" "$inference_reason" >&2
@@ -344,16 +368,33 @@ else
 fi
 printf 'ONCVPSP selection: %s\nONCVPSP executable: %s\n' "$oncv_selection" "$oncv_executable" >&2
 
-if [ -n "$keeptmp" ]; then
-    mkdir -p "$keeptmp"
-    workdir=$keeptmp
-    tmpfiles=
+report_tmp= temporary_workdir=
+if [ -n "$keep_workdir" ]; then
+    # Create only a fresh leaf directory; never reuse existing run artifacts.
+    workdir=$(absolute_path "$keep_workdir")
+    mkdir -m 700 -- "$workdir" || die "cannot create new work directory: $keep_workdir"
 else
-    workdir=$(mktemp -d "${TMPDIR:-/tmp}/upf2cc.XXXXXX")
-    tmpfiles=$workdir
+    workdir=$(mktemp -d "$PWD/.oncvpsp-work.XXXXXX")
+    temporary_workdir=$workdir
 fi
-cleanup() { [ -z "$tmpfiles" ] || rm -rf "$tmpfiles"; }
+cleanup() {
+    [ -z "$report_tmp" ] || rm -f -- "$report_tmp"
+    [ -z "$temporary_workdir" ] || rm -rf -- "$temporary_workdir"
+    return 0
+}
 trap cleanup EXIT
+printf 'ONCVPSP work directory: %s\n' "$workdir" >&2
+
+# Resolve the destination before running. Staging beside it makes replacement
+# atomic even when the work directory is on another filesystem.
+if [ "$out" != - ]; then
+    out=$(absolute_path "$out")
+    case $out in
+        "$workdir/oncvpsp.in"|"$workdir/oncvpsp.stderr")
+            die "output conflicts with a work directory file: $out" ;;
+    esac
+    report_tmp=$(mktemp -- "${out}.tmp.XXXXXX")
+fi
 
 # oncvpsp reads stdin, but Fortran BACKSPACE on a pipe is a no-op. Keep the
 # embedded generator card in a real file and redirect that file to stdin.
@@ -390,13 +431,20 @@ status=0
 
 case $status in
     0) ;;
-    124|137) die "$oncv_executable timed out after ${RUN_TIMEOUT} s" ;;
+    124|137) cat -- "$stderr_f" >&2
+             die "$oncv_executable timed out after ${RUN_TIMEOUT} s" ;;
     126|127) cat "$stderr_f" >&2
              die "$oncv_executable could not start (status $status) -- is its runtime environment loaded?" ;;
     *) cat "$stderr_f" >&2; die "$oncv_executable exited with status $status" ;;
 esac
-if grep -q BACKSPACE "$stderr_f"; then cat "$stderr_f" >&2; fi
+cat -- "$stderr_f" >&2
 
-case $upf in /*) src=$upf ;; *) src=$PWD/$upf ;; esac
-bash "$extractor" "$stdout_f" -o "$out" --source-upf "$src"
-printf '%s -> %s\n' "$upf" "$out"
+# Publish the report only after a successful run, so a failed rerun never
+# replaces an existing report.
+if [ "$out" = - ]; then
+    cat -- "$stdout_f"
+else
+    cat -- "$stdout_f" > "$report_tmp"
+    mv -fT -- "$report_tmp" "$out"
+fi
+printf '%s -> %s\n' "$upf" "$out" >&2

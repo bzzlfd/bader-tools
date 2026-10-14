@@ -319,8 +319,8 @@ contains
          '  -c, --core-rho Z PATH [QCORE]', &
          '                core charge correction for species with atomic', &
          '                number Z: PATH is a .corecharge table (see', &
-         '                tool/upf2corecharge.sh; two columns r [bohr] and', &
-         '                rho_core [e/bohr^3], without a 4*pi factor).', &
+         '                tool/extract_oncv_corecharge.sh); two columns r [bohr] and', &
+         '                rho_core [e/bohr^3], without a 4*pi factor.', &
          '                The interpolated rho_core is', &
          '                added around every Z atom and the valence + core', &
          '                density is written as an extra OUTPUT.ref.cube for', &

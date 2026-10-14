@@ -21,36 +21,41 @@ are dropped entirely), so clipped values and the printed core integral can
 underestimate the core charge.
 
 Input defaults to stdin; '-' also selects stdin.
-Output defaults to stdout. Summaries, warnings and errors go to stderr.
+For file input, output defaults to the input path with .oncvpsp.stdout
+replaced by .corecharge; other filenames have .corecharge appended.
+For stdin input, -o PATH or -o - is required.
+Summaries, warnings and errors go to stderr.
 
 Options:
   -o, --output PATH     write the table to PATH ('-' means stdout)
-      --tag TAG         force the report block to read: R for '!R' (patched
-                        ONCVPSP) or r for '!r' (unpatched plot block);
-                        default: '!R' with '!r' fallback
+      --tag TAG         auto (default), R for '!R' (patched ONCVPSP), or
+                        r for '!r' (plot block); auto prefers '!R' and
+                        falls back to '!r' only if '!R' data is absent
       --source-upf PATH record the source UPF in the header (metadata only)
   -h, --help            show this help
 
 Examples:
-  extract_oncv_corecharge.sh oncvpsp.stdout -o Na.corecharge
-  extract_oncv_corecharge.sh < oncvpsp.stdout > Na.corecharge
+  extract_oncv_corecharge.sh Na.oncvpsp.stdout
+  extract_oncv_corecharge.sh < Na.oncvpsp.stdout -o Na.corecharge
+  extract_oncv_corecharge.sh Na.oncvpsp.stdout -o -
 
 File output is replaced only after the full report has been validated.
+For stdout output, staging uses the calling directory, not /tmp.
 EOF
 }
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
-input=- output=- source_upf= tag_mode=auto have_input=false
+input=- output= source_upf= tag_mode=auto have_input=false
 while [ $# -gt 0 ]; do
     case $1 in
         -o|--output)    [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires a path"
                         output=$2; shift 2 ;;
-        --tag)          [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires R or r"
+        --tag)          [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires auto, R or r"
                         tag_mode=${2#\!}
                         case $tag_mode in
-                            R|r) ;;
-                            *) die "invalid --tag value: $2 (expected R or r)" ;;
+                            auto|R|r) ;;
+                            *) die "invalid --tag value: $2 (expected auto, R or r)" ;;
                         esac
                         shift 2 ;;
         --source-upf)   [ $# -ge 2 ] && [ -n "$2" ] || die "$1 requires a path"
@@ -68,18 +73,26 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$input" = - ]; then
+    [ -n "$output" ] || die "stdin input requires -o PATH or -o - (try --help)"
     input_label=stdin
     input_path=/dev/stdin
 else
     [ -f "$input" ] && [ -r "$input" ] || die "cannot read ONCVPSP output: $input"
     input_label=$input
     input_path=$input
+    output=${output:-${input%.oncvpsp.stdout}.corecharge}
+fi
+
+if [ "$output" != - ]; then
+    [ ! -d "$output" ] || die "output is a directory: $output"
+    [[ "$input" = - || ! "$input" -ef "$output" ]] || die "output would overwrite the input report: $output"
+    [[ -z "$source_upf" || ! "$source_upf" -ef "$output" ]] || die "output would overwrite the source UPF: $output"
 fi
 
 # Stage the table so invalid reports produce neither partial stdout nor a
 # truncated destination. File output is staged beside its destination.
 if [ "$output" = - ]; then
-    table_tmp=$(mktemp "${TMPDIR:-/tmp}/oncv2cc.XXXXXX")
+    table_tmp=$(mktemp "$PWD/.oncv-corecharge.XXXXXX")
 else
     table_tmp=$(mktemp -- "${output}.tmp.XXXXXX")
 fi
@@ -121,6 +134,8 @@ awk '
         sub(/^[ \t\r]+/, "", line)
         tag = substr(line, 1, 2)
         if (tag != "!R" && tag != "!r") next
+        # A forced block must not fail because the other block is malformed.
+        if ((mode == "R" && tag != "!R") || (mode == "r" && tag != "!r")) next
         dcol = (tag == "!R") ? 2 : 3
         rest = substr(line, 3)
         sub(/^[ \t\r]+/, "", rest)
@@ -154,8 +169,6 @@ awk '
         if (mode == "R") {
             if (rows["!R"] == 0) {
                 message = source ": no !R data rows; use output from the patched ONCVPSP"
-                if (rows["!r"] >= 2)
-                    message = message " (" rows["!r"] " !r rows available: rerun with --tag r)"
                 fail(message)
             }
             if (rows["!R"] < 2) fail(source ": need at least two !R data rows")
@@ -207,5 +220,6 @@ awk '
 if [ "$output" = - ]; then
     cat -- "$table_tmp"
 else
-    mv -f -- "$table_tmp" "$output"
+    mv -fT -- "$table_tmp" "$output"
+    printf '%s -> %s\n' "$input_label" "$output" >&2
 fi

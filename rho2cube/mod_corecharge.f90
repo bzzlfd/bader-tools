@@ -5,8 +5,8 @@
 ! lines and 'r rho_core' rows: rho_core(r) is the actual all-electron
 ! core density in e/bohr^3 on a radial mesh, r in bohr, with no 4*pi
 ! factor included. The table can come from any code that exposes the
-! all-electron core charge; tools/upf2corecharge.sh writes one
-! from a UPF file.
+! all-electron core charge; tool/run_oncvpsp_from_upf.sh reruns the
+! UPF generator input, then tool/extract_oncv_corecharge.sh writes the table.
 !
 ! Core charge is confined to 0 <= r <= rmax, the last tabulated
 ! radius with |rho_core| above tolerance. Its spherical integral
@@ -68,7 +68,8 @@ contains
             if (index(line, 'columns:') > 0 .and. index(line, 'rhoc') > 0 &
                 .and. index(line, '4*pi') > 0) &
                call die('old 4*pi-scaled core charge table: '//trim(filename)// &
-                        '; regenerate with tools/upf2corecharge.sh or divide column 2 by 4*pi and update the header')
+                        '; regenerate with tool/extract_oncv_corecharge.sh'// &
+                        ' or divide column 2 by 4*pi and update the header')
             cycle
          end if
          read(line, *, iostat=ios) radius, density
