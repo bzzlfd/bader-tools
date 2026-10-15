@@ -1,40 +1,227 @@
 本文介绍如何利用 ONCVPSP 的全电子计算数据, 对 PWmat 在模守恒赝势计算下输出的 (赝价电子) 电荷密度文件 (`OUT.RHO`) 进行全电子修正,
 以支持 `bader` 分析 VASP `CHGCAR` 时, 类似引入全电子电荷密度文件 `AECCAR` 辅助 Bader volume 划分 (`bader <CHGCAR> -ref <AECCAR>`) 的功能.
 
-该功能所解决的问题和实现方案的讨论可以查看[笔记 core-rho-correction.md](../note/core-rho-correction.md).
+该功能所解决的问题和解决方案的讨论可以查看[笔记 core-rho-correction.md](../note/core-rho-correction.md).
 
-## 使用 ONCVPSP 产生芯电子电荷密度
+## tldr
+```mermaid
+flowchart LR
+    subgraph pwmat["PWmat"]
+        direction TB
+        pwmat_inputs@{ shape: docs, label: "atom.config<br/>+ OUT.RHO" }
+        upf@{ shape: doc, label: "ele.UPF" }
+    end
 
-我们需要一个执行 DFT 原子全电子计算的程序, 从中获得芯电子的电荷密度数据.
-赝势生成软件是一个好选择. 因为原子全电子计算是制造赝势的前置动作, 所以它们内部一定包含  DFT 原子全电子计算模块.
+    subgraph gaussian["Gaussian（.cube file）"]
+        direction TB
+        rho_cube@{ shape: doc, label: "rho.cube" }
+        rho_ref_cube@{ shape: doc, label: "rho.ref.cube" }
+    end
 
-我们需要告诉这个计算模块
+    subgraph vasp["VASP"]
+        chgcar@{ shape: doc, label: "CHGCAR" }
+        aeccar@{ shape: doc, label: "AECCAR" }
+    end
 
-1. 使用的泛函 (如, LDA/GGA)
-2. 电子配置 (如, $1s^2 2s^2 2p^6 3s^1$)
-3. 把哪些能级当作芯电子能级 (如, 把 $1s^2 2s^2 2p^6$ 当作芯电子), 以便输出 "芯电子电荷密度"
+    %% 此分组表示两种运行方式; UPF 分别直连脚本和 ONCVPSP 程序.
+    subgraph oncv_tools["ONCVPSP 运行（手动 / 脚本）"]
+        direction TB
+        run_oncv[["run_oncvpsp_from_upf.sh"]]
+        oncvpsp("oncvpsp.x<br/>（run_plot.patch 后重新编译）")
+    end
 
-目前 PWmat 官网提供的 UPF 赝势文件大多由 ONCVPSP 生成, 这类赝势文件在文件开头包含 ONCVPSP 输入, 自然包含了上面三个信息.
-把 UPF 文件中 `<PP_INPUTFILE>` 标签下的输出传给 oncvpsp (这个具体的程序可能是 `oncvpsp.x` 或 `oncvpspr.x`, 取决于这个赝势文件考虑了标量相对论效应, 还是全相对论效应(包含自旋轨道耦合)), oncvpsp 就会输出芯电子电荷密度.
+    %% 节点分为三类: 文件（单张或叠层文档, Mermaid 11.3+）、主要程序（圆角矩形）、脚本（双竖线矩形）; 虚线框用于分组.
+    %% 普通操作: 转换待分析密度, 或直接读取 CHGCAR.
+    pwmat_inputs --> convert_cube("convert_rho2cube.x")
+    convert_cube --> rho_cube
+    rho_cube --> bader("bader chargefile<br/>[-ref reference_charge]")
+    chgcar --> bader
+    bader --> charge@{ shape: doc, label: "Bader charge" }
 
-`tool/run_oncvpsp_from_upf.sh` 脚本可以帮你从 UPF 中提取 `<PP_INPUTFILE>` 标签并运行 `oncvpsp.x` 或 `oncvpspr.x`.
-`tool/extract_oncv_corecharge.sh` 脚本可以帮你从 oncvpsp 的输出中提取芯电子电荷密度.
+    %% Advance: VASP 使用 AECCAR; PWmat 由配套的 OUT.RHO、atom.config 与芯电荷表生成参考密度.
+    aeccar -.->|"-ref"| bader
+    %% 手动方式可独立准备输入; 脚本是自动准备输入并运行同一补丁版程序的可选捷径.
+    upf -.->|"自动提取 PP_INPUTFILE"| run_oncv
+    upf -.->|"也可以手动设置<br/>全电子计算参数"| oncvpsp
+    run_oncv -.->|"调用"| oncvpsp
+    oncvpsp -.-> oncv_report@{ shape: doc, label: "ONCVPSP 计算报告" }
+    oncv_report -.-> extract_core[["extract_oncv_corecharge.sh"]]
+    extract_core -.-> corecharge@{ shape: docs, label: "ele.corecharge" }
+    pwmat_inputs -.-> convert_ref("convert_rho2cube.x<br/>--core-rho Z ele.corecharge")
+    corecharge -.-> convert_ref
+    convert_ref -.-> rho_ref_cube
+    rho_ref_cube -.->|"-ref"| bader
 
-提取出芯电子电荷密度表 `<ele.corecharge>` 后, 用 `convert_rho2cube.x` 生成 "全电子参考电荷密度"文件供 `bader` 分析:
+    %% 路线颜色表示操作层次; 所有文件统一使用中性样式.
+    classDef basic fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:2.5px
+    classDef advanced fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1.5px
+    classDef neutral fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px
+    class convert_cube,bader basic
+    class oncvpsp,run_oncv,extract_core,convert_ref advanced
+    class pwmat_inputs,upf,rho_cube,rho_ref_cube,chgcar,aeccar,oncv_report,corecharge,charge neutral
+    style pwmat fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
+    style gaussian fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
+    style vasp fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
+    style oncv_tools fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
+    linkStyle 0,1,2,3,4 stroke:#2563eb,stroke-width:2.5px
+    linkStyle 5,6,7,8,9,10,11,12,13,14,15 stroke:#64748b,stroke-width:1.25px
+```
+
+## 操作流程
+
+使用 `convert_rho2cube.x` 将 PWmat 的电荷密度转成 bader 支持的输入文件格式, 使用
 
 ```bash
-convert_rho2cube.x -a atom.config -r OUT.RHO -o rho.cube
+convert_rho2cube.x -a atom.config -r OUT.RHO -o <rho.cube>
+bader rho.cube
+```
+
+`convert_rho2cube.x` 支持传入芯电子电荷密度数据, 以生成一个 "全电子"电荷密度文件, 使用
+
+```bash
 convert_rho2cube.x -a atom.config -r OUT.RHO -o rho.ref.cube \
     --core-rho Z_ELE1 ele1.corecharge \
     --core-rho Z_ELE2 ele2.corecharge
 bader rho.cube -ref rho.ref.cube
 ```
 
-其中 `Z_ELE1`、`Z_ELE2` 替换为相应元素的原子序数, `ele1.corecharge`、`ele2.corecharge` 也视情况替换为真实文件.
+`Z_ELE` 是原子序号, 与 `atom.config` 中描述原子种类和位置的数据对应; `ele.corecharge` 也应该视情况替换成真实文件名.
+`ele.corecharge` 的文件内容是两列数据, 第一列是半径 $r$, 第二列是球对称径向函数 $\rho_\mathrm{core}(r)$.
+`--core-rho Z_ELE ele.corecharge` 做的事, 就是对所有原子序号是 `Z_ELE` 的位置 $\mathbf{\tau_i}$ , 叠加一个 $\rho_\mathrm{core}(\mathbf{r}-\mathbf{\tau_i})$, 考虑晶胞周期性.
 
-### 如果 UPF 文件头没有 `<PP_INPUTFILE>` 标签
-那就只好自己从头构造一个 oncvpsp 的了. 
-一个输入文件大概长这样
+`ele.corecharge` 可以是自造的模型芯电子电荷密度, 但是我们更建议使用以下流程使用真实的芯电子电荷密度.
+
+1. 下载 oncvpsp 源码, 应用 [run_plot.patch](../oncvpsp-patch/run_plot.patch) 代码补丁, 编译 oncvpsp
+2. 从 PWmat 计算中的输入赝势文件提取原子全电子计算配置信息, 输入 oncvpsp 并运行
+3. 提取 oncvpsp 标准输出中, `!R` 数据段芯电子电荷密度, 经过数据转换, 产生 `ele.corecharge` 文件
+
+### "为什么选择 oncvpsp? "
+
+我们需要一个可以进行原子的 DFT 全电子计算的程序, 从中获得芯电子的电荷密度数据.
+赝势生成软件是一个好选择. 因为原子全电子计算是制造赝势的前置动作, 所以它们内部一定包含  DFT 原子全电子计算模块.
+
+我们需要告诉这个计算模块
+
+1. 使用的泛函 (如, LDA/PBE)
+2. 电子配置 (如, $1s^2 2s^2 2p^6 3s^1$)
+3. 把哪些能级当作芯电子能级 (如, 把 $1s^2 2s^2 2p^6$ 当作芯电子), 以便输出 "芯电子电荷密度"
+
+目前 PWmat 官网提供的 UPF 赝势文件大多由 ONCVPSP 生成,
+这类文件头通常包含一个  `<PP_INPUTFILE>` 标签, 这是 oncvpsp 的输入参数回写, 自然包含上面三个信息.
+理想情况下只需要拷贝  `<PP_INPUTFILE>` 里面的内容, 输入给 oncvpsp, 就可以从 oncvpsp 输出 `!r` 数据块获悉芯电子电荷密度.
+
+我想这是最简单的做法.
+
+### 1. 应用补丁, 重新编译 `oncvpsp.x`
+
+我们注意到 `!r` 数据块内的径向芯电子电荷密度仅服务于绘图, 经过了裁剪.
+考虑到作为一个通用的修正方法, 使用以上裁剪的数据可能会破坏方法的有效性,
+我们建议通过添加程序补丁 [run_plot.patch](../oncvpsp-patch/run_plot.patch) , 重新编译 oncvpsp, 输出并使用记录完整芯电子电荷密度新的 `!R` 数据块.
+
+oncvpsp 源码涉及很多依赖, 编译起来有一些麻烦,
+再加上大家的计算机环境各不相同, 写一份适合不同环境和需求的编译指导手册太难了.
+好在 LLM 大人精通这件事, 可以直接请 coding agent 帮忙:
+
+下面提示词中的路径替换为自己的路径, 然后整段复制给 coding agent:
+
+```text
+请在当前计算机上为我编译打过补丁的 ONCVPSP, 并在得到我的明确授权后安装. 我需要
+`oncvpsp.x`; 如果当前源码支持, 也构建非相对论和全相对论版本. 补丁应让程序在标准输出中
+额外写出未被绘图逻辑裁剪的 `!R` 径向芯电荷密度数据.
+
+资源和路径:
+
+- ONCVPSP 官方仓库: https://github.com/oncvpsp/oncvpsp
+- Hamann 的项目网站也包含 ONCVPSP 源码包: http://www.mat-simresearch.com/
+- libxc 下载页: https://libxc.gitlab.io/download/
+- libxc 官方仓库: https://gitlab.com/libxc/libxc
+- 补丁: `<BADER_TOOLS>/oncvpsp-patch/run_plot.patch`
+- 可写的工作根目录: `<WORK_ROOT>`
+- 安装前缀: `<INSTALL_PREFIX>`
+- 可选的现有构建脚本或参考安装: `<REFERENCE_BUILD>`
+
+请直接完成安全、无需额外授权的工作, 不要只给我一份泛化教程. 按以下要求执行:
+
+1. 先只读检查操作系统和架构、C/Fortran 编译器、CMake/Make/Ninja、`module`、
+   `pkg-config`, 以及现有的 BLAS/LAPACK、MKL/OpenBLAS 和 libxc. 阅读所选 ONCVPSP 版本的
+   README、`Makefile` 和 `CMakeLists.txt`; 如果给了 `<REFERENCE_BUILD>`, 也只读检查其构建参数.
+   简要报告可用环境、拟采用的方案和兼容性风险, 然后继续实施.
+
+2. 优先复用现有编译器、module 和数学库, 并保证 C、Fortran、BLAS/LAPACK 和 libxc
+   的编译器 ABI 兼容. 根据当前源码和本机环境选择 Makefile 或 CMake, 不要凭记忆写死选项.
+   只在确有需要时另行编译 libxc; 如果编译, 必须启用 ONCVPSP 需要的 Fortran 接口.
+
+3. 下载、解压、改源码、构建和中间产物只能放在 `<WORK_ROOT>` 中新建的独立目录,
+   只安装到 `<INSTALL_PREFIX>`. 不要修改原始补丁、其他项目、shell 启动文件、系统目录或
+   全局 module 目录, 也不要覆盖用途不明的文件. 只从上述官方来源下载, 并记录版本、commit
+   或校验和. 不得自行使用 `sudo`、系统包管理器或管理员权限; 如果确实需要, 先向我说明
+   原因、命令和影响, 等待授权.
+
+4. 先运行 `git apply --check <patch>`, 成功后再应用补丁并检查 diff. 如果失败,
+   不要用 fuzz 强行应用. 请对照补丁和新源码, 说明失败原因、原补丁改了什么,
+   以及在当前版本中应如何实现. 如果能确认语义等价, 做最小化手工迁移并展示 diff;
+   如果无法确认, 停止修改并说明需要我决定的问题.
+
+5. 使用独立的 out-of-source build 目录和适合正式运行的优化配置. 若链接 MKL
+   或其他非系统路径中的共享库, 优先设置合理的 RPATH; 仅在上游和库许可时考虑静态链接.
+   尽量使安装后的程序无需手动设置 `LD_LIBRARY_PATH` 或重新加载整套编译环境;
+   如果做不到, 明确说明运行时必需的环境.
+
+6. 只读检查用户现有的软件组织方式, 包括 `module`/`MODULEPATH`、`PATH`
+   中的用户级 `bin` 目录、常用安装前缀、已有的版本目录, 以及符号链接、包装脚本或
+   环境脚本的命名习惯. `<INSTALL_PREFIX>` 明确可用时以它为准; 如果它未替换、不可写,
+   或与明确的现有约定冲突, 列出候选方案和影响并一次性询问我. 若现有方式唯一、可写且
+   与安装前缀一致, 则在安装计划中沿用它: 例如拟创建本地 modulefile、在既有用户
+   `bin` 中添加不覆盖现有文件的链接, 或按既有格式提供环境脚本. 如果没有现成组织方式,
+   计划将安装内容自包含于 `<INSTALL_PREFIX>`, 并给出绝对路径调用方法和可选的局部环境脚本.
+   不要计划修改 shell 启动文件、全局 `PATH` 或共享软件目录.
+
+7. 编译完成后至少验证: 可执行文件的动态依赖中没有 `not found`; 上游的代表性测试或示例能运行;
+   一个含芯电子的输入会产生格式正确的 `!R` 数据. 如果
+   `<BADER_TOOLS>/tool/extract_oncv_corecharge.sh` 可用, 还要实际提取 core-charge 文件,
+   并核对其积分芯电子数. 对构建生成的每个 ONCVPSP 变体做基本运行检查.
+   如果补丁新增的 `!R` 行造成上游文本对比测试失败, 要将它与计算本身失败区分开.
+
+8. 完成构建和上述验证后, 在任何安装行为之前向我提交精确的安装计划: 安装前缀、
+   将执行的命令、将新建或更改的目录和文件、与现有内容的冲突、环境接入方式、
+   运行时依赖和回退方法, 然后明确询问我是否授权执行. 即使 `<INSTALL_PREFIX>` 已经填写,
+   也不代表已经授权; 没有得到我的明确肯定答复也不视为默认同意. 在授权前不得运行
+   `cmake --install`、`make install`, 不得向安装前缀复制或移动文件, 也不得创建符号链接、
+   modulefile、包装脚本或环境脚本. 只在获得授权后执行获批的范围, 并在安装后验证
+   可执行文件和环境接入方式.
+
+9. 最后报告实际使用的版本/commit、编译器和库、关键构建选项、补丁方式、安装路径、
+   可执行文件、测试结果、运行及环境接入命令和剩余限制. 若中途失败, 保留 `<WORK_ROOT>` 中的现场,
+   报告完整错误的位置、诊断和建议的下一步, 不要把未验证的构建声称为成功.
+```
+
+
+### 2. 制作输入文件, 运行 oncvpsp
+
+如果我们使用的赝势 UPF 文件由 oncvpsp 生成, 文件中会包含 `<PP_INPUTFILE>` 标签, 记录运行 oncvpsp 时的输入信息.
+提取其中的内容, 拷贝到一个输入文件供 oncvpsp 读取
+
+此外, 你还需要查看这个赝势是考虑了什么相对论效应, 以选择使用哪个 oncvpsp 程序.
+决定赝势中包含何种程度的相对论效应, 需要查看 <PP_HEADER> 中的   "relativistic" 属性, 可能的取值为 "scalar | full | nonrelativistic".
+oncvpsp 包含三个程序 `oncvpsp.x`, `oncvpspr.x`, `oncvpspnr.x`,
+吊诡的是, 看起来应该对应考虑了标量相对论效应, 考虑全相对论效应 (包含自旋轨道耦合) 和不考虑相对论效应的计算程序.
+但是实际 `oncvpsp.x`, `oncvpspnr.x` 是一个程序, 都进行考虑标量相对论效应的计算.
+
+`tool/run_oncvpsp_from_upf.sh` 脚本可以帮你从 UPF 中提取 `<PP_INPUTFILE>` 标签并识别 `relativistic` 属性, 选择正确的 oncvpsp 运行.
+只需要提供给三个oncvpsp可执行文件存在的路径, `tool/run_oncvpsp_from_upf.sh` 会正确从中选择. 路径的指定方式是
+
+1. `PATH` 环境变量
+2. `ONCVPSP_DIR` 环境变量
+3. 命令行 `run_oncvpsp_from_upf.sh --oncvpsp DIR`
+
+逐个覆盖的. 也可以直接使用
+
+4. 命令行 `run_oncvpsp_from_upf.sh --oncvpsp FILE` 强制指定所用的 oncvpsp 程序.
+
+
+#### 如果 UPF 文件头没有 `<PP_INPUTFILE>` 标签
+那就只好自己从头构造一个 oncvpsp 输入了.
+一个输入长下面这样, 可以从 oncvpsp 源码测试目录或其他 UPF 文件中拷贝一份当模板:
 
 ```text
 # ATOM AND REFERENCE CONFIGURATION
@@ -52,178 +239,51 @@ bader rho.cube -ref rho.ref.cube
 ......
 ```
 
-示例只展示了输入文件开头的原子与参考组态, 后面还必须继续给出赝势优化、局域势、投影子、模型芯电荷和测试组态等参数. 这一部分各字段的含义如下:
+示例只展示了输入文件开头的**全电子计算阶段**参数, 后面还需要继续给出与**赝离子化**有关的参数,
+由于我们需要的芯电子电荷密度在全电子计算阶段决定, 赝离子化阶段参数的设置只需要保证oncvpsp能正常运行, 不会对 `!R` 数据块结果产生影响.
 
-以 `#` 开头的行是供人阅读的标题、列名或分隔行, 不是计算参数. 例如 `# ATOM AND REFERENCE CONFIGURATION` 和 `# PSEUDOPOTENTIAL AND OPTIMIZATION` 标明数据块的用途, `# atsym ...` 和 `# n l f` 标明各列的含义, 单独的 `#` 只用于视觉分隔. ONCVPSP 会在读取特定数据块前跳过连续的 `#` 行, 因此这些行不会影响原子计算或 `rhoc`. 但 `#` 不是在任意位置都生效的通用注释语法: 例如程序会连续读取 `nc+nv` 个轨道记录, 不应在这些 `(n,l,f)` 记录中间插入 `#` 行.
+示例各字段的含义如下:
 
-| 字段 | 含义和对计算的影响 |
+连续以 `#` 开头的行是注释分隔行, 程序会跳过它们.
+
+第一个数据行内容如下表
+
+| 字段 | 含义 |
 |---|---|
-| `atsym` | 长度最多为 2 的元素符号. ONCVPSP 只检查它是否非空, 不检查它是否与 `z` 匹配. 它会被写入 UPF 的 `element` 等元数据, 但不决定输出文件名; 文件名由调用程序的脚本和重定向方式决定. |
-| `z` | 核电荷数 $Z$, 也就是元素的原子序数, 不是电子数. 它给出核库仑势 $-Z/r$; 最终 Kohn-Sham 有效势还要加上 Hartree 势和交换关联势. |
-| `nc` | 芯轨道态的行数, 不是芯电子数. |
-| `nv` | 价轨道态的行数, 不是价电子数. |
+| `atsym` | 长度最多为 2 的元素符号. ONCVPSP 只检查它是否非空, 不检查它是否与 `z` 匹配. 它会被写入 UPF 的 `element` 等元数据. |
+| `z` | 核电荷数 $Z$, 也就是元素的原子序数, 不是电子数. 它决定核库仑势 $-Z/r. |
+| `nc` | 接下来输入的电子配置中, 芯态的行数. |
+| `nv` | 接下来输入的电子配置中, 价态的行数. |
 | `iexc` | 原子 DFT 计算使用的交换关联泛函编号. |
-| `psfile` | 赝势输出格式: `psp8` 用于 ABINIT, `upf` 用于 Quantum ESPRESSO/PWSCF, `both` 则两种都输出. ONCVPSP 实际把相应数据块写入标准输出, 再由脚本提取成赝势文件. |
+| `psfile` | 赝势输出格式: ABINIT`psp8` / QE `upf`/ `both`  |
 
-`nc+nv` 决定后面读取的 `(n,l,f)` 记录数. 前 `nc` 行被当作芯轨道, 后 `nv` 行被当作价轨道. `n` 和 `l` 分别是主量子数和角动量量子数, `f` 是该轨道的占据数. 芯电子数和价电子数应分别按占据数求和:
-
-$$
-N_\mathrm{core}=\sum_{i=1}^{n_c}f_i,\qquad
-N_\mathrm{valence}=\sum_{i=n_c+1}^{n_c+n_v}f_i.
-$$
-
+接下来, oncvpsp 会连续读入 `nc+nv` 行记录. 前 `nc` 行被当作芯轨道, 后 `nv` 行被当作价轨道.
+每行记录包含 `n` `l` `f`, 分别是主量子数, 角动量量子数和该轨道的电子占据数.
 所有占据数的和不必等于 `z`. ONCVPSP 允许
 
 $$
 \sum_i f_i\leq Z.
 $$
 
-等号表示中性参考原子; 小于 $Z$ 表示正离子参考组态; 大于 $Z$ 会被程序判定为负离子并停止. `f` 本身是实数, 因此可以使用分数占据. `z` 在输入和求解器中也是实数, 但分数 `z` 表示分数核电荷的模型原子, 不是普通元素的离子. 例如要构造 $\mathrm{Si}^{+}$, 应保持 `z=14` 并将总占据数改为 13, 而不是把 `z` 改为 13.
+等号表示中性参考原子; 小于 $Z$ 表示正离子参考组态; 大于 $Z$ 会被程序判定为负离子并停止. 我们在理想中期望赝离子的散射行为与制作赝势时的电子配置无关, 模守恒条件也在努力保证这一点; 但是现实中还是会由差别, 有人会根据原子所处具体环境的电子配置生成自己的赝势.
+`f` 可以是实数, 电子不能是分数个, 但是 LDA/GGA 近似下密度泛函允许分数占据.
 
-ONCVPSP 的内置 `iexc` 编号为:
+除了 `(n,l,f)`, 你可能还会在这一行看到 `energy (Ha)`, 这是 ONCVPSP 求解后在输出回显中追加的本征值, 不是需要手工给出的输入参数.
+
+ONCVPSP 的内置 `iexc` 编号对应的泛函为:
 
 | `iexc` | 交换关联泛函 | 类型 |
 |---:|---|---|
-| `1` | Wigner exchange-correlation | LDA |
-| `2` | Hedin--Lundqvist exchange-correlation | LDA |
 | `3` | Perdew--Zunger 对 Ceperley--Alder 数据的参数化 | LDA |
 | `4` | Perdew--Burke--Ernzerhof (PBE) | GGA |
 
-仅使用 `iexc=1`--`4` 时, ONCVPSP 使用自带的泛函实现, 编译时不需要链接 libxc. 负数 `iexc` 则按 `-XXXCCC` 编码调用 libxc, 其中 `XXX` 和 `CCC` 分别是 libxc 的 exchange 和 correlation 泛函编号. 例如 `-001009` 表示 Perdew--Zunger/Ceperley--Alder LDA, `-101130` 表示 PBE. UPF 写出器只能翻译其中一部分编号; 在当前源码中, `iexc=1` 也没有对应的 UPF 泛函名称, 因此 `iexc=1` 与 `psfile=upf` 的组合会在写出 UPF 时停止.
+仅使用以上编号时, ONCVPSP 使用自带的泛函实现, 编译时不需要链接 libxc.
+负数 `iexc` 则按 `-XXXCCC` 编码调用 libxc, 其中 `XXX` 和 `CCC` 分别是 libxc 的 exchange 和 correlation 泛函编号. 例如 `-001009` 表示 Perdew--Zunger/Ceperley--Alder LDA, `-101130` 表示 PBE. UPF 写出器只能翻译其中一部分编号.
 
-示例中的前 3 个状态为 $1s^2 2s^2 2p^6$, 共有 10 个芯电子; 后 2 个状态为 $3s^2 3p^2$, 共有 4 个价电子. 总占据数为 14, 所以这是中性 Si 参考原子. 赝势的离子价电荷为
 
-$$
-Z_\mathrm{ion}=Z-N_\mathrm{core}=14-10=4.
-$$
+### 3. 提取芯电子电荷密度数据
 
-ONCVPSP 先用上述核电荷、占据数和 `iexc` 自洽求解原子 Kohn--Sham 方程, 得到各轨道的全电子波函数和本征值. 输入记录只有 `(n,l,f)` 三项; `energy (Ha)` 是 ONCVPSP 求解后在输出回显中追加的本征值, 不是需要手工给出的输入参数. 然后程序才根据后续参数构造赝波函数和赝势. `nc` 的分段同时决定哪些全电子轨道累加到本项目要提取的芯电荷密度中.
+注意按照 oncvpsp 的习惯, 其输出的电荷密度 包含 $4\pi$ 因子, 从 `!r` 或 `!R` 提取的数据需要除以 $4\pi$ 才符合
+`convert_rho2cube --core-rho` 的输入文件格式.
 
-## 应用补丁, 重新编译 ONCVPSP
-
-ONCVPSP 原本输出的 `!r` 中包含的芯电子电荷密度只为绘图使用, 会在横轴和纵轴裁剪数据网格, 这有利于更好地在图片中展示结果, 却不利于我们利用它进行"全电子"电荷密度修正. 
-本项目的 [run_plot.patch](../oncvpsp-patch/run_plot.patch) 会让 oncvpsp 额外输出 `!R` 数据块. 该数据块保留 ONCVPSP 的原始径向网格和未裁剪的芯电荷密度, 供 `extract_oncv_corecharge.sh` 提取.
-
-下面使用 ONCVPSP 和 libxc 的官方源码, 通过 CMake 在用户目录下完成编译和安装. 如果只使用内置的 `iexc=1`--`4`, 可按后文说明跳过 libxc. ONCVPSP 还需要 Fortran/C 编译器、CMake、BLAS 和 LAPACK. `gnuplot` 只用于 ONCVPSP 的交互式绘图, 不是提取芯电荷所必需的. 集群环境通常需要先加载编译器、CMake、BLAS/LAPACK 模块; Debian/Ubuntu 上对应的开发包通常是 `gfortran`、`cmake`、`libblas-dev` 和 `liblapack-dev`.
-
-以下命令在同一个空目录中执行. `install_root` 可以改成任意有写权限的持久目录. 示例固定使用 libxc 7.1.2; 换用其他稳定版本时, 应重新执行后面的编译和验证. 本节已用 ONCVPSP 提交 `dc150ab47d` 和 libxc 7.1.2 验证.
-
-```bash
-bader_tools=/absolute/path/to/bader-tools
-install_root=$PWD/local
-
-git clone --depth 1 --branch 7.1.2 \
-    https://gitlab.com/libxc/libxc.git libxc-7.1.2
-git clone https://github.com/oncvpsp/oncvpsp.git oncvpsp
-```
-
-如果只使用内置的 `iexc=1`--`4`, 可省略第一条 libxc 的克隆命令和下一小节, 直接获取 ONCVPSP 源码.
-
-### 编译 libxc (仅负数 `iexc` 需要)
-
-ONCVPSP 不仅需要 libxc 的 C 库, 还需要它的 Fortran 接口. libxc 的 CMake 配置默认不构建该接口, 因此 `-DENABLE_FORTRAN=ON` 不能省略. 这里使用静态库, 使最终的 ONCVPSP 程序不必在运行时查找 `libxc.so` 和 `libxcf03.so`.
-
-```bash
-cmake -S libxc-7.1.2 -B build-libxc \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="$install_root/libxc" \
-    -DENABLE_FORTRAN=ON \
-    -DBUILD_SHARED_LIBS=OFF \
-    -DBUILD_TESTING=OFF
-cmake --build build-libxc --parallel
-cmake --install build-libxc
-
-"$install_root/libxc/bin/xc-info" 1 | head
-```
-
-最后一条命令应打印 libxc 的版本以及编号为 1 的 LDA exchange 泛函信息. 安装目录中还应同时存在 `libxc.a`、`libxcf03.a` 和 `xc_f03_lib_m.mod`. 如果使用共享库 (`-DBUILD_SHARED_LIBS=ON`), 则还要把 `$install_root/libxc/lib` 加入系统的运行时库搜索路径, 或在编译 ONCVPSP 时设置合适的 RPATH.
-
-### 检查并应用 oncvpsp 补丁
-
-进入 ONCVPSP 源码目录, 先用 `git apply --check` 检查补丁是否与所下载的源码版本兼容. 前面设置的 `bader_tools` 是本项目源码的绝对路径.
-
-```bash
-cd oncvpsp
-git apply --check "$bader_tools/oncvpsp-patch/run_plot.patch"
-git apply "$bader_tools/oncvpsp-patch/run_plot.patch"
-git diff --check
-cd ..
-```
-
-若第一条命令失败, 不要强行使用 `patch --fuzz`: 上游的 `run_plot.f90` 或 `run_plot_r.f90` 很可能已经改变, 应先检查差异并确认补丁仍然在 `rhoc` 生成之后输出相同含义的数据. `git diff -- src/run_plot.f90 src/run_plot_r.f90` 可以查看实际修改.
-
-### 编译 ONCVPSP
-
-需要使用负数 `iexc` 时, 按下面的方式链接前面编译的 libxc:
-
-```bash
-cmake -S oncvpsp -B build-oncvpsp \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="$install_root/oncvpsp" \
-    -DLibxc_ROOT="$install_root/libxc" \
-    -DONCVPSP_WITH_TOML=OFF
-cmake --build build-oncvpsp --parallel
-cmake --install build-oncvpsp
-```
-
-如果只使用内置的 `iexc=1`--`4`, 则无需下载和编译 libxc, 配置 ONCVPSP 时显式关闭它即可:
-
-```bash
-cmake -S oncvpsp -B build-oncvpsp \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="$install_root/oncvpsp" \
-    -DONCVPSP_WITH_Libxc=OFF \
-    -DONCVPSP_WITH_TOML=OFF
-cmake --build build-oncvpsp --parallel
-cmake --install build-oncvpsp
-```
-
-这种构建会使用 ONCVPSP 的 `exc_libxc_stub.f90`. `iexc=1`--`4` 不会调用该 stub; 如果输入负数 `iexc`, 程序会报错说明当前可执行文件未链接 libxc, 然后停止.
-
-选择链接 libxc 时, 配置阶段应明确显示 `Found Libxc` 以及实际版本. 如果报 `Libxc ... lacks the required Fortran03 interface`, 通常是编译 libxc 时漏掉了 `-DENABLE_FORTRAN=ON`. 如果找不到 BLAS/LAPACK, 应安装对应的开发包或通过集群模块提供它们; 必要时可按本机安装位置向 CMake 传入 `LAPACK_ROOT`.
-
-ONCVPSP 的 CMake 配置会从 GitHub 下载固定校验和的 `CPM.cmake`; 即使这里关闭了不需要的 TOML 输入支持, 首次配置仍需能够访问 GitHub. `-DONCVPSP_WITH_TOML=OFF` 可以避免继续下载和编译 `toml-f`.
-
-当前 CMake 构建会安装三个程序:
-
-- `oncvpsp.x`: 标量相对论版本;
-- `oncvpspnr.x`: 非相对论版本;
-- `oncvpspr.x`: 全相对论版本.
-
-某些旧版源码把后两个程序命名为 `oncvpsp_nr.x` 和 `oncvpsp_r.x`. `run_oncvpsp_from_upf.sh` 能识别这两套名称. 可以让脚本通过 `ONCVPSP_DIR` 找到本次安装:
-
-```bash
-export ONCVPSP_DIR="$install_root/oncvpsp/bin"
-"$ONCVPSP_DIR/oncvpsp.x" --help
-```
-
-### 验证 `!R` 输出
-
-不要只检查程序是否成功链接; 至少运行一个带芯电子的原子输入, 确认补丁数据可以被本项目脚本读取. ONCVPSP 自带的 Si 测试含 10 个芯电子:
-
-```bash
-"$ONCVPSP_DIR/oncvpsp.x" \
-    < oncvpsp/tests/data/14_Si.dat \
-    > Si.oncvpsp.stdout
-
-grep -m 1 '^!R ' Si.oncvpsp.stdout
-"$bader_tools/tool/extract_oncv_corecharge.sh" \
-    Si.oncvpsp.stdout --tag R -o Si.corecharge
-grep -F '# 4*pi*int' Si.corecharge
-```
-
-最后打印的积分应接近 `10`. 由于数值积分和有限径向网格, 末位可以有很小误差; 本节验证得到 `10.000060`. 如需检查全相对论分支, 可用 `oncvpspr.x` 运行 `oncvpsp/tests/data/52_Te.dat`, 并同样确认输出包含 `!R` 行.
-
-补丁为标准输出新增了大量 `!R` 行, 而上游测试的参考输出不包含这些行. 因此直接运行 `ctest --test-dir build-oncvpsp` 时, 文本比较会在第一条 `!R` 处报差异; 这不等于原子计算失败. 本节验证中, 删除新加的 `!R` 行后, ONCVPSP 的 26 个上游参考输出比较全部通过.
-
-随后即可按照前一节运行实际 UPF, 并要求提取脚本只接受补丁提供的精确数据:
-
-```bash
-"$bader_tools/tool/run_oncvpsp_from_upf.sh" Ele.UPF \
-    --oncvpsp "$ONCVPSP_DIR"
-"$bader_tools/tool/extract_oncv_corecharge.sh" \
-    Ele.oncvpsp.stdout --tag R --source-upf Ele.UPF \
-    -o Ele.corecharge
-```
-
-源码和进一步说明见 [ONCVPSP 官方仓库](https://github.com/oncvpsp/oncvpsp)、[ONCVPSP 项目网站](http://www.mat-simresearch.com/)、[libxc 官方仓库](https://gitlab.com/libxc/libxc) 和 [libxc 下载页](https://libxc.gitlab.io/download/).
+`tool/extract_oncv_corecharge.sh` 脚本可以帮你从 oncvpsp 的输出中提取并处理 oncvpsp 芯电子电荷密度.
