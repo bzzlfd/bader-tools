@@ -1,4 +1,4 @@
-在 [bader 用法](bader-usage.md)的“尝试示例”小节中，我们提到 Henkelman 课题组网站提供的 [`NaCl_wcore`](https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl_wcore.tar.gz) 例子需要全电子电荷密度的参考才能进行可靠的 Bader charge 划分。
+在 [bader-usage.md](bader-usage.md) 的“尝试示例”小节中，我们提到 Henkelman 课题组网站提供的 [`NaCl_wcore`](https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl_wcore.tar.gz) 例子需要全电子电荷密度的参考才能进行可靠的 Bader charge 划分。
 
 在赝势程序中，输出的电荷密度格点数据只包含（1）光滑化的（2）价电子[^valencecore]贡献，满占据的、局域的芯电子态对成键以及某些物理过程贡献不大，被假设为冻结，并在输出中被舍弃[^cross]。这样的好处，一方面是可以通过减少电子态加速对角化求解过程，一方面是（几乎）完备地表达光滑的电子态需要很少数量的平面波/稀疏的实空间网格，这也可以提高计算速度。
 

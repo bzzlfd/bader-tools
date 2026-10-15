@@ -136,4 +136,4 @@ bader rho.cube
 
 ## 高级使用方法：全电子参考密度修正
 
-在采用冻结芯近似的赝势计算中，输出的电荷密度通常不包含芯电子，因而可能影响 Bader 体积的划分。问题背景及 PWmat 下的解决思路参见 [core-rho-correction.md](note/core-rho-correction.md)，具体操作流程参见 [corecharge_reference.md](docs/corecharge_reference.md)。
+在采用冻结芯近似的赝势计算中，输出的电荷密度通常不包含芯电子，因而可能影响 Bader 体积的划分。问题背景及 PWmat 下的解决思路参见 [core-rho-correction.md](note/core-rho-correction.md)，具体操作流程参见 [bader-reference-density.md](docs/bader-reference-density.md)。

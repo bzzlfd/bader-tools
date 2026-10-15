@@ -1,7 +1,9 @@
+# 为 Bader 分析构造近似全电子参考密度
+
 本文介绍如何利用 ONCVPSP 的全电子计算数据, 对 PWmat 在模守恒赝势计算下输出的 (赝价电子) 电荷密度文件 (`OUT.RHO`) 进行全电子修正,
 以支持 `bader` 分析 VASP `CHGCAR` 时, 类似引入全电子电荷密度文件 `AECCAR` 辅助 Bader volume 划分 (`bader <CHGCAR> -ref <AECCAR>`) 的功能.
 
-该功能所解决的问题和解决方案的讨论可以查看[笔记 core-rho-correction.md](../note/core-rho-correction.md).
+该功能所解决的问题和解决方案的讨论可以查看[core-rho-correction.md](../note/core-rho-correction.md).
 
 ## tldr
 ```mermaid

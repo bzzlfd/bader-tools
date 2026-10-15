@@ -45,7 +45,7 @@ $$
 
 数据结尾的密度及其导数都应接近零；如果最后一点仍非零，程序会警告表格可能被截断。程序对径向表作线性插值，并在晶胞内每个相应元素的原子周围叠加，周期像也会被计入。
 
-可以自己制作满足上述格式的模型密度，但推荐按照[corecharge_reference.md](./corecharge_reference.md)使用带本项目补丁的 ONCVPSP 生成可靠数据。
+可以自己制作满足上述格式的模型密度，但推荐按照 [bader-reference-density.md](./bader-reference-density.md) 使用带本项目补丁的 ONCVPSP 生成可靠数据。
 
 ## `run_oncvpsp_from_upf.sh`
 
@@ -137,7 +137,7 @@ python3 tool/rho_integral.py OUT.RHO OUT.RHO_2
 bader rho.cube
 ```
 
-`bader` 的主要结果写入 `ACF.dat`。更详细的 `bader` 参数、算法和输出格式见[《Bader 程序使用说明》](../note/bader-usage.md)。
+`bader` 的主要结果写入 `ACF.dat`。更详细的 `bader` 参数、算法和输出格式见 [bader-usage.md](../note/bader-usage.md)。
 
 ### 共线自旋极化计算（`SPIN=2`）
 
