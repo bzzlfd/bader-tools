@@ -16,8 +16,8 @@ convert_rho2cube.x \
 |---|---|
 | `-a PATH`、`--atom PATH` | PWmat 的晶体结构文件，提供晶格、原子序数和分数坐标, 实际文件名需要视情况从 `REPORT` `IN.ATOM` 中找到, 弛豫计算需要使用 `final.config`。 |
 | `-r PATH [W]`、`--rho PATH [W]` | 一个 PWmat `OUT.RHO` 及其可选权重，默认 `W=1`；可重复，最多 64 个。 |
-| `-o PATH` | 输出 cube 文件。 |
-| `-c Z PATH [QCORE]`、`--core-rho Z PATH [QCORE]` | 对原子序数 `Z` 在 `OUTPUT.cube` 上叠加`PATH`指定的芯电子径向密度表。`QCORE` 是可选的, 可以填入用户预期的芯电子数供程序对 `PATH` 中的数据进行校验。 |
+| `-o PATH` | 输出唯一的 cube 文件；内容为各 `-r` 输入的加权和，再叠加所有 `--core-rho` 指定的芯电子密度。 |
+| `-c Z PATH [QCORE]`、`--core-rho Z PATH [QCORE]` | 对原子序数 `Z` 在输出密度上叠加 `PATH` 指定的芯电子径向密度表。`QCORE` 是可选的，可以填入用户预期的芯电子数供程序校验 `PATH` 中的数据。 |
 | `-h`、`--help` | 打印帮助。 |
 
 程序最终会对读入的所有电荷密度数据按照权重系数累加. 权重可以是负数，因此也可以生成密度差。
@@ -174,7 +174,12 @@ convert_rho2cube.x \
 /path/to/bader-tools/build/convert_rho2cube.x \
   -a atom.config \
   -r OUT.RHO \
-  -o rho.cube \
+  -o rho.cube
+
+/path/to/bader-tools/build/convert_rho2cube.x \
+  -a atom.config \
+  -r OUT.RHO \
+  -o rho.ref.cube \
   --core-rho 11 Na.corecharge 10 \
   --core-rho 17 Cl.corecharge 10
 
@@ -183,7 +188,7 @@ bader rho.cube -ref rho.ref.cube
 
 这里的 `11`、`17` 是原子序数；末尾的 `10` 是可选的每原子预期芯电子数 `QCORE`。这个例子对应 Na 使用 1 个价电子、Cl 使用 7 个价电子的赝势，所以两者都有 `QCORE = Z - z_valence = 10`。如果赝势采用不同的价电子划分，应相应修改该数值，例如含 9 个价电子的 Na 应使用 `QCORE=2`。
 
-程序仍把原始加权价电子密度写入 `rho.cube`，并自动把“价电子 + 芯电子”写入 `rho.ref.cube`。推荐使用：
+每次调用只写出 `-o` 指定的文件：第一次生成原始加权价电子密度 `rho.cube`，第二次生成“赝价电子 + 芯电子”参考密度 `rho.ref.cube`。两次调用的 `-a`、`-r` 及权重必须完全一致；除输出路径不同外，第二次只额外指定 `--core-rho`。推荐使用：
 
 ```bash
 bader rho.cube -ref rho.ref.cube
@@ -193,9 +198,10 @@ bader rho.cube -ref rho.ref.cube
 
 ## 结果检查与常见问题
 
-- 转换日志中的密度积分应与赝势价电子总数一致。`SPIN=2` 时，应检查两个通道积分之和。
+- 未指定 `--core-rho` 时，转换日志中的密度积分应与赝势价电子总数一致。`SPIN=2` 时，应检查两个通道积分之和。
+- 指定 `--core-rho` 时，程序不会报告输出密度的网格积分。芯电子密度在原子核附近高度集中，PWmat 的实空间网格通常不足以准确积分这部分密度；应使用读取芯密度表时报告的径向积分校验芯电子数。
 - `ACF.dat` 中的 `CHARGE` 是每个 Bader volume 内从 `rho.cube` 积分得到的电子数。使用赝势密度时，电荷转移应以各元素的赝势价电子数为参照，而不是直接用原子序数相减。
-- `--core-rho` 只改变参考划分文件，不改变 `rho.cube` 中实际积分的价电子密度。
+- `--core-rho` 只改变本次调用中 `-o` 指定的输出；程序不会隐式生成其他文件。
 - 同一条命令中的多个 `OUT.RHO` 必须来自相同晶胞和相同 FFT 网格；程序不会对不同网格做插值。
 - 芯密度表必须与所用赝势的价/芯电子划分一致。`QCORE=Z-z_valence` 是很有用的校验值，但只产生警告，不会替用户决定数据是否物理可靠。
 - ONCVPSP 未应用 [`oncvpsp-patch/run_plot.patch`](../oncvpsp-patch/run_plot.patch) 时通常只有为绘图裁剪过的 `!r` 数据。脚本允许回退以便诊断，但正式结果建议使用补丁产生的 `!R` 数据并通过 `--tag R` 强制检查。

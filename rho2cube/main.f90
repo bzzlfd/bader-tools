@@ -9,9 +9,8 @@
 !                      --core-rho 11 Na.corecharge 10 --core-rho 17 Cl.corecharge 10
 !
 ! each -c/--core-rho Z FILE [QCORE] adds the all-electron core charge of species Z,
-! read from a table file, around every atom of that atomic number
-! and writes the valence + core density as an additional reference
-! cube (out.ref.cube) for "bader out.cube -ref out.ref.cube".
+! read from a table file, around every atom of that atomic number before
+! the resulting density is written to the single -o output.
 ! ------------------------------------------------------------------
 program convert_rho2cube
    use iso_fortran_env, only: error_unit, output_unit
@@ -29,13 +28,14 @@ program convert_rho2cube
 
    character(len=4096) :: atomfile, outfile, arg
    character(len=4096) :: rhofile(MAXRHO)
-   character(len=4096) :: ccfile(MAXCC), reffile
+   character(len=4096) :: ccfile(MAXCC)
    character(len=32768) :: comment2, tmps
    character(len=256) :: charge_message
    real(dp) :: weight(MAXRHO), expected_qcore(MAXCC)
    integer :: nrho, ncc, nargs, i, k, u, ios, zval
    integer :: ccz(MAXCC), nat
-   real(dp) :: wval, cellvol_bohr, qsum, qval, qfile, rsum, lattice_diff
+   real(dp) :: wval, cellvol_bohr, qsum, qfile, rsum, lattice_diff
+   real(dp) :: tail_derivative
    logical :: have_a, have_o, exists
    logical :: have_expected_qcore(MAXCC)
    character(len=16) :: ans
@@ -120,33 +120,17 @@ program convert_rho2cube
          end if
       end do
    end do
-   if (ncc > 0) then
-      reffile = trim(outfile)
-      if (len_trim(reffile) > 5) then
-         if (reffile(len_trim(reffile)-4:len_trim(reffile)) == '.cube') &
-            reffile = reffile(1:len_trim(reffile)-5)
-      end if
-      reffile = trim(reffile)//'.ref.cube'
-   end if
-
    ! ------------------- refuse to clobber a file ----------------------
-   do i = 1, merge(2, 1, ncc > 0)
-      if (i == 1) then
-         arg = trim(outfile)
-      else
-         arg = trim(reffile)
+   inquire(file = trim(outfile), exist = exists)
+   if (exists) then
+      write(*, '(a)', advance = 'no') &
+         'output file exists: '//trim(outfile)//'   overwrite? [y/N] '
+      read(*, '(a)', iostat = ios) ans
+      if (ios /= 0 .or. (ans(1:1) /= 'y' .and. ans(1:1) /= 'Y')) then
+         write(*, '(a)') 'not overwriting, exit.'
+         stop
       end if
-      inquire(file = trim(arg), exist = exists)
-      if (exists) then
-         write(*, '(a)', advance = 'no') &
-            'output file exists: '//trim(arg)//'   overwrite? [y/N] '
-         read(*, '(a)', iostat = ios) ans
-         if (ios /= 0 .or. (ans(1:1) /= 'y' .and. ans(1:1) /= 'Y')) then
-            write(*, '(a)') 'not overwriting, exit.'
-            stop
-         end if
-      end if
-   end do
+   end if
 
    ! ------------------------- structure -------------------------------
    write(*, '(/,a)') '== atom.config: '//trim(atomfile)//' =='
@@ -237,24 +221,20 @@ program convert_rho2cube
          end if
          write(*, '(a)') '        tail:  r [bohr]    rho_core [e/bohr^3]'&
                         //'    drho_core/dr [e/bohr^4]'
-         do k = max(2, cc(i)%n - 2), cc(i)%n
-            write(*, '(14x,f10.4,2es14.3)') cc(i)%r(k), cc(i)%rho_core(k), &
-               (cc(i)%rho_core(k) - cc(i)%rho_core(k-1))/(cc(i)%r(k) - cc(i)%r(k-1))
+         do k = max(1, cc(i)%n - 4), cc(i)%n
+            if (k == 1) then
+               tail_derivative = (cc(i)%rho_core(2) - cc(i)%rho_core(1)) &
+                  /(cc(i)%r(2) - cc(i)%r(1))
+            else
+               tail_derivative = (cc(i)%rho_core(k) - cc(i)%rho_core(k-1)) &
+                  /(cc(i)%r(k) - cc(i)%r(k-1))
+            end if
+            write(*, '(14x,f10.4,2es14.3)') &
+               cc(i)%r(k), cc(i)%rho_core(k), tail_derivative
          end do
       end do
    end if
 
-   write(*, '(/,a)') '== output =='
-   call write_cube(trim(outfile), atoms, meta, rho, trim(comment2))
-
-   qval = sum(rho)*cellvol_bohr/real(size(rho), dp)
-   write(*, '(a)') '  written: '//trim(outfile)
-   write(*, '(a,f14.8,a)') &
-      '  integral of the mixed density over the cell = ', qval, ' e'
-   write(*, '(a,f12.8,a,f12.8)') &
-      '  density min = ', minval(rho), '   max = ', maxval(rho)
-
-   ! ------------- reference cube: valence + core charge ---------------
    if (ncc > 0) then
       do i = 1, ncc
          call superimpose_corecharge(cc(i), atoms, meta, rho)
@@ -266,16 +246,19 @@ program convert_rho2cube
          comment2 = trim(comment2)//trim(tmps)//trim(ccfile(i))
          if (i < ncc) comment2 = trim(comment2)//'; '
       end do
-      call write_cube(trim(reffile), atoms, meta, rho, trim(comment2))
-      qsum = sum(rho)*cellvol_bohr/real(size(rho), dp)
-      write(*, '(a)') '  written: '//trim(reffile)
-      write(*, '(a,f14.8,a)') &
-         '  integral of valence + core density   = ', qsum, ' e'
-      write(*, '(a,f14.8,a)') &
-         '  core charge added on the grid        = ', qsum - qval, ' e'
-      write(*, '(a,f12.8,a,f12.8)') &
-         '  reference density min = ', minval(rho), '   max = ', maxval(rho)
    end if
+
+   write(*, '(/,a)') '== output =='
+   call write_cube(trim(outfile), atoms, meta, rho, trim(comment2))
+
+   write(*, '(a)') '  written: '//trim(outfile)
+   if (ncc == 0) then
+      qsum = sum(rho)*cellvol_bohr/real(size(rho), dp)
+      write(*, '(a,f14.8,a)') &
+         '  integral of the output density over the cell = ', qsum, ' e'
+   end if
+   write(*, '(a,f12.8,a,f12.8)') &
+      '  density min = ', minval(rho), '   max = ', maxval(rho)
 
 contains
 
@@ -327,10 +310,9 @@ contains
          '                number Z: PATH is a .corecharge table (see', &
          '                tool/extract_oncv_corecharge.sh); two columns r [bohr] and', &
          '                rho_core [e/bohr^3], without a 4*pi factor.', &
-         '                The interpolated rho_core is', &
-         '                added around every Z atom and the valence + core', &
-         '                density is written as an extra OUTPUT.ref.cube for', &
-         '                "bader OUTPUT.cube -ref OUTPUT.ref.cube". Repeatable.', &
+         '                The interpolated rho_core is added around every Z', &
+         '                atom before the resulting density is written to the', &
+         '                -o output. Repeatable.', &
          '                QCORE optionally specifies the expected core charge', &
          '                per atom (>= 0). Warn if the table integral differs', &
          '                by more than max(0.001 e/atom, 0.1% of QCORE).', &
@@ -338,7 +320,7 @@ contains
          '', &
          'example:', &
          '  convert_rho2cube.x -a atom.config -r OUT.RHO 0.5 -r OUT.RHO2 0.5 -o xxx.cube', &
-         '  convert_rho2cube.x --atom atom.config --rho OUT.RHO -o NaCl.cube &' &
+         '  convert_rho2cube.x --atom atom.config --rho OUT.RHO -o NaCl.ref.cube &' &
          //' --core-rho 11 Na.corecharge 10 --core-rho 17 Cl.corecharge 10'
    end subroutine print_help
 
