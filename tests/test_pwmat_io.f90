@@ -1,8 +1,10 @@
 program test_pwmat_io
    use utils_mod, only: dp
-   use pwmat_io_mod, only: atom_config_t, read_atom_config
+   use pwmat_io_mod, only: atom_config_t, rho_meta_t, lattice_tol, lattice_same, &
+                           read_atom_config, meta_same
    implicit none
    type(atom_config_t) :: atoms
+   type(rho_meta_t) :: meta_a, meta_b
    integer :: i
    real(dp), parameter :: tol = 1.0e-12_dp
    real(dp), parameter :: lattice_constant = 5.68452685_dp
@@ -40,6 +42,22 @@ program test_pwmat_io
       0.25_dp, 0.75_dp, 0.75_dp], [3,8]))
    call assert_true(all(abs(atoms%xfrac - expected_xfrac) < tol), 'fractional coordinates and order')
    print '(a)', 'PASS: read_atom_config with reordered cards and internal blank lines'
+
+   ! ==================================================================
+   ! Test 2: lattice differences at the tolerance are accepted, while
+   ! larger differences make OUT.RHO metadata incompatible.
+   ! ==================================================================
+   meta_a%n = [2, 2, 2]
+   meta_a%nnodes = 1
+   meta_a%AL = expected_AL
+   meta_b = meta_a
+   meta_b%AL(1,1) = meta_b%AL(1,1) + lattice_tol
+   call assert_true(lattice_same(meta_a%AL, meta_b%AL), 'lattice difference at tolerance')
+   call assert_true(meta_same(meta_a, meta_b), 'lattice difference at tolerance')
+   meta_b%AL(1,1) = expected_AL(1,1) + 1.01_dp*lattice_tol
+   call assert_true(.not. lattice_same(meta_a%AL, meta_b%AL), 'lattice difference above tolerance')
+   call assert_true(.not. meta_same(meta_a, meta_b), 'lattice difference above tolerance')
+   print '(a)', 'PASS: lattice compatibility tolerance'
 
 contains
 

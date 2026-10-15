@@ -28,11 +28,11 @@ module pwmat_io_mod
    use utils_mod
    implicit none
    private
-   public :: atom_config_t, rho_meta_t, read_atom_config, parse_atom_config, open_rho, &
-             read_rho_meta, meta_same, rho_read_first, rho_read_add
+   public :: atom_config_t, rho_meta_t, lattice_tol, lattice_same, read_atom_config, &
+             parse_atom_config, open_rho, read_rho_meta, meta_same, rho_read_first, rho_read_add
 
    ! tolerance for lattice comparison, angstrom
-   real(dp), parameter :: al_tol = 1.0e-5_dp
+   real(dp), parameter :: lattice_tol = 1.0e-5_dp
 
    type :: atom_config_t
       integer :: natom = 0
@@ -80,8 +80,13 @@ contains
    logical function meta_same(a, b)
       type(rho_meta_t), intent(in) :: a, b
       meta_same = all(a%n == b%n) .and. a%nnodes == b%nnodes &
-                  .and. all(abs(a%AL - b%AL) < al_tol)
+                  .and. lattice_same(a%AL, b%AL)
    end function meta_same
+
+   pure logical function lattice_same(a, b)
+      real(dp), intent(in) :: a(3,3), b(3,3)
+      lattice_same = all(abs(a - b) <= lattice_tol)
+   end function lattice_same
 
    subroutine read_atom_config(filename, atoms)
       character(*), intent(in) :: filename

@@ -35,7 +35,7 @@ program convert_rho2cube
    real(dp) :: weight(MAXRHO), expected_qcore(MAXCC)
    integer :: nrho, ncc, nargs, i, k, u, ios, zval
    integer :: ccz(MAXCC), nat
-   real(dp) :: wval, cellvol_bohr, qsum, qval, qfile, rsum
+   real(dp) :: wval, cellvol_bohr, qsum, qval, qfile, rsum, lattice_diff
    logical :: have_a, have_o, exists
    logical :: have_expected_qcore(MAXCC)
    character(len=16) :: ans
@@ -169,8 +169,14 @@ program convert_rho2cube
    write(*, '(a,i0,a,i0,a,i0,a,i0,a,i0)') &
       '        grid = ', meta%n(1), ' x ', meta%n(2), ' x ', meta%n(3), &
       '  (', meta%n(1)*meta%n(2)*meta%n(3), ' points), nnodes = ', meta%nnodes
-   if (any(abs(meta%AL - atoms%AL) > 1.0e-5_dp)) &
-      call warn('lattice in '//trim(rhofile(1))//' differs from '//trim(atomfile))
+   lattice_diff = maxval(abs(meta%AL - atoms%AL))
+   if (.not. lattice_same(meta%AL, atoms%AL)) then
+      write(tmps, '(5a,es12.4,a,es12.4,a)') &
+         'lattice mismatch between ', trim(atomfile), ' and ', trim(rhofile(1)), &
+         ': maximum component difference = ', lattice_diff, &
+         ' angstrom, tolerance = ', lattice_tol, ' angstrom'
+      call die(trim(tmps))
+   end if
    allocate(rho(meta%n(1)*meta%n(2)*meta%n(3)))
    cellvol_bohr = cell_volume(meta%AL) / bohr_ang**3
    call rho_read_first(u, trim(rhofile(1)), meta, weight(1), rho, rsum)
