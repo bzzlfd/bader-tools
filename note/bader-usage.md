@@ -36,7 +36,7 @@ ln -s "$PWD/bader" "$HOME/.local/bin/bader"
 bader 官网 examples 章节 和 [GitHub](https://github.com/henkelmangroup/bader/tree/main/examples) 都提供示例。每个示例压缩包通常包含电荷密度输入文件（如 `CHG_*`），以及 `bader` 的输出文件 `ACF.dat`、`BCF.dat` 和 `AVF.dat`。
 解压后，进入示例目录（如 `C2H4a`），运行 `bader <chargefile>`（如 `bader CHG_C2H4a`），即可生成分析结果文件。结果可能因程序版本不同而与示例有所差异。
 
-其中，`NaCl_wcore` 比较特别：除了输入文件 `CHGCAR`，它还包含 `CHGCAR_sum`。后者是全电子电荷密度参考，在这个例子中，不使用 `-ref` 时，1个价电子的 Na 原子计算不会在 Na 附近形成密度峰，梯度流最终都汇流到 Cl 原子上；引入全电子参考密度后，Na 附近会分得一些电子数。
+`NaCl_wcore` 比较特别：除了输入文件 `CHGCAR`，它还包含 `CHGCAR_sum`。后者是全电子电荷密度参考，在这个例子中，不使用 `-ref` 时，1个价电子的 Na 原子计算不会在 Na 附近形成密度峰，梯度流最终都汇流到 Cl 原子上；引入全电子参考密度后，Na 附近会分得一些电子数。
 
 `CHGCAR_sum` 由以下步骤生成：
 
@@ -162,7 +162,7 @@ Bader 划分是该程序的主要功能，几乎所有参数都围绕它设计�
 
 文件详细信息可以参看[输出文件各列含义说明](#acfdatbcfdatavfdat-的各列含义)
 
-#### `-p`：输出划分网格
+#### `-p`：输出网格划分
 
 > “我想看看 Bader volume 的表面。”
 
@@ -346,7 +346,7 @@ Bader 划分是该程序的主要功能，几乎所有参数都围绕它设计�
 
 没有 *basin* 被分配给的原子不会出现在这个文件中，`-p all_atom`、`-p all_bader` 的输出也会受此影响。
 
-### 单位与文件之间的关系
+### 输出数值单位受输入文件影响
 
 |     量     | 标准 VASP `CHGCAR` 输入 | 标准 Gaussian `.cube` 输入 |
 | :--------: | :---------------------: | :------------------------: |
