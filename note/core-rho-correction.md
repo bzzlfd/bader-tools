@@ -10,12 +10,12 @@ Bader charge 以电荷密度的梯度流作为划分依据。可是舍弃了芯�
 `NaCl_wcore` 的例子就可以理解为过于激进的价-芯电子分配方式，芯电子贡献的缺失改变电荷密度的梯度分布，仅依据价电子密度进行 Bader 体积划分产生了偏差。
 
 在 VASP PAW 赝势上解决这个问题不需要对基础设施做任何修改，PAW 本身就带有“全电子”信息，只需要输出出来，让 `bader` 以全电子电荷密度为参考，执行 `bader CHGCAR -ref CHGCAR_sum` 就好了。
-然而对于 NCPP 来说，全电子是不需要的，赝势文件和 DFT 计算中通常不包含这部分，想简单重走 VASP 路线，PWmat 办不到的。但 NCPP 终究是从全电子来的。
+然而对于 NCPP 来说，全电子是不需要的，赝势文件和 DFT 计算中通常不包含这部分，想简单重走 VASP 路线，PWmat 是办不到的。但 NCPP 终究是从全电子来的。
 如果硬要“重建全电子电荷分布”，我想应该会是这样：
 
 ## 严格的做法
 
-对于所有 PWmat 的**占据态**赝价电子波函数 $`\psi^{\mathrm{Ps}}_{m\mathbf{k}}`$，通过某个原子的赝价电子 $`\phi^{\mathrm{Ps}}_{nl}`$、投影子 $`\beta_{nl}`$、全电子 $`\phi^{\mathrm{AE}}_{nl}`$ 重建其全电子电荷密度，应该有：
+对于所有 PWmat 的**占据态**赝价电子波函数 $`\psi^{\mathrm{PS}}_{m\mathbf{k}}`$，通过某个原子的赝价电子 $`\phi^{\mathrm{PS}}_{nl}`$、投影子 $`\beta_{nl}`$、全电子 $`\phi^{\mathrm{AE}}_{nl}`$ 重建其上的全电子电荷密度，应该有：
 
 ```math
 \rho^{\mathrm{AE}} =
@@ -24,9 +24,9 @@ Bader charge 以电荷密度的梯度流作为划分依据。可是舍弃了芯�
 +
 \sum_{\substack{m\mathbf{k},\,nl \\ m\in\mathrm{occ.},\,n\in\mathrm{val.}}}
 \left|
-\psi^{\mathrm{Ps}}_{m\mathbf{k}}
-+ \left(\phi^{\mathrm{AE}}_{nl}-\phi^{\mathrm{Ps}}_{nl}\right)
-\bigl\langle\beta_{nl}\,\bigm\vert\,\psi^{\mathrm{Ps}}_{m\mathbf{k}}\bigr\rangle
+\psi^{\mathrm{PS}}_{m\mathbf{k}}
++ \left(\phi^{\mathrm{AE}}_{nl}-\phi^{\mathrm{PS}}_{nl}\right)
+\bigl\langle\beta_{nl}\,\bigm\vert\,\psi^{\mathrm{PS}}_{m\mathbf{k}}\bigr\rangle
 \right|^2,
 ```
 
@@ -35,27 +35,27 @@ Bader charge 以电荷密度的梯度流作为划分依据。可是舍弃了芯�
 
 ```math
 \left(\varepsilon_{nl}-\hat{T}-V_{\mathrm{loc}}\right)
-\bigl\vert\phi^{\mathrm{Ps}}_{nl}\bigr\rangle
+\bigl\vert\phi^{\mathrm{PS}}_{nl}\bigr\rangle
 \bigl\langle\beta_{nl}\,\bigm\vert\,\psi\bigr\rangle
 ```
 
-的含义就是 $`\psi`$ 投影到 $`\beta_{nl}`$ 的部分，应该和这个赝价电子态 $`\phi^{\mathrm{Ps}}_{nl}`$ 感受到一样的散射。
+的含义就是 $`\psi`$ 投影到 $`\beta_{nl}`$ 的部分，应该和这个赝价电子态 $`\phi^{\mathrm{PS}}_{nl}`$ 感受到一样的散射。
 
 假设使用的赝势文件是通过 ONCVPSP[^oncvpsp] 生成的。
 为了重建参考全电子电荷密度，我需要：
 
 1. 重构 oncvpsp 源码，以输出：
-    1. 全电子波函数 $`\phi^{\mathrm{AE}}_{nl}`$、赝价电子波函数 $`\phi^{\mathrm{Ps}}_{nl}`$。
+    1. 全电子波函数 $`\phi^{\mathrm{AE}}_{nl}`$、赝价电子波函数 $`\phi^{\mathrm{PS}}_{nl}`$。
     2. oncvpsp 对角化 $`B`$ 矩阵前，未经线性组合的 $`\beta_{nl}`$。
 2. 考虑过滤 oncvpsp 中的束缚态/散射态波函数。
-3. 实现 $`\bigl\langle\beta_{nl}\,\bigm\vert\,\psi^{\mathrm{Ps}}_{m\mathbf{k}}\bigr\rangle`$ 的计算。
+3. 实现 $`\bigl\langle\beta_{nl}\,\bigm\vert\,\psi^{\mathrm{PS}}_{m\mathbf{k}}\bigr\rangle`$ 的计算。
 
 [^oncvpsp]: 它事实上或许已经成为现代模守恒赝势的标准生成程序，很多广泛使用的高精度赝势项目（SG15、PD）都是由它产生的。现在应该很少有人用其他软件生成的赝势了吧。
 
 然后还要教用户这套复杂的工具，强制用户使用 oncvpsp 赝势。想必非常折磨，折磨我也折磨用户。
 
 因为冻芯电子近似，第一项仅仅是叠加一个万年不变的径向函数。
-因为 NCPP 在截断半径 $`r_{cl}`$ 之外的 $`\phi^{\mathrm{Ps}}_{nl}=\phi^{\mathrm{AE}}_{nl}`$，第二项影响范围应该只局限在 $`r_{cl}`$ 以内。
+因为 NCPP 在截断半径 $`r_{cl}`$ 之外的 $`\phi^{\mathrm{PS}}_{nl}=\phi^{\mathrm{AE}}_{nl}`$，第二项影响范围应该只局限在 $`r_{cl}`$ 以内。
 和老师讨论的过程中，我们认为芯电子区域（$`r<r_{cl}`$）的电荷密度对 Bader volume 划分影响不大，或许可以换成以下：
 
 ## 简单且（大概）等效的替代做法
@@ -66,7 +66,7 @@ Bader charge 以电荷密度的梯度流作为划分依据。可是舍弃了芯�
 \left|\phi^{\mathrm{AE}}_{nl}\right|^2
 +
 \sum_{\substack{m\mathbf{k} \\ m\in\mathrm{occ.}}}
-\left|\psi^{\mathrm{Ps}}_{m\mathbf{k}}\right|^2.
+\left|\psi^{\mathrm{PS}}_{m\mathbf{k}}\right|^2.
 ```
 
 我只需要：
@@ -74,6 +74,6 @@ Bader charge 以电荷密度的梯度流作为划分依据。可是舍弃了芯�
 1. 用任意赝势生成程序的全电子计算过程，产生 $`\rho_{\mathrm{core}}^{\mathrm{AE}}(r)=\sum_{nl\in\mathrm{core}}\lvert\phi^{\mathrm{AE}}_{nl}\rvert^2`$。
 2. 把 $`\rho_{\mathrm{core}}^{\mathrm{AE}}(r)`$ 叠加到价电子电荷密度文件，作为 `bader -ref` 输入。
 
-$`\rho_{\mathrm{core}}^{\mathrm{AE}}(r)`$ 甚至直接在 oncvpsp 的标准输出中存在，~~都不需要改 oncvpsp~~（emm，那个数据是服务于画图的，在横轴纵轴都被截断了，不是完整数据，还是要改 oncvpsp 代码）。
+$`\rho_{\mathrm{core}}^{\mathrm{AE}}(r)`$ 甚至直接在 oncvpsp 的标准输出中存在，~~都不需要改 oncvpsp~~（emm，那个数据为了服务于画图对横轴纵轴进行了截断，还是要改 oncvpsp 代码）。
 
 这是我们的最终方案。

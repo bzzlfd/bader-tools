@@ -47,12 +47,13 @@ flowchart LR
     oncvpsp -.-> oncv_report@{ shape: docs, label: "ONCVPSP 计算报告" }
     oncv_report -.-> extract_core[["extract_oncv_corecharge.sh"]]
     extract_core -.-> corecharge@{ shape: docs, label: "芯电子密度表<br/>（*.corecharge）" }
-    pwmat_inputs -.-> convert_ref("convert_rho2cube.x<br/>--core-rho Z CORECHARGE_PATH")
+    pwmat_inputs -.-> convert_ref("convert_rho2cube.x<br/>--core-rho Z CORECHARGE")
     corecharge -.-> convert_ref
     convert_ref -.-> rho_ref_cube
     rho_ref_cube -.->|"-ref"| bader
 
-    %% 路线颜色表示操作层次；所有文件统一使用中性样式。
+    %% 连线颜色按数据来源区分：PWmat 路线沿用 README 工作流图的蓝色，VASP 路线为橙色；
+    %% 虚线表示提供参考密度的附属路线；bader 的输出连线为中性灰。节点样式与连线无关。
     classDef basic fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:2.5px
     classDef advanced fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1.5px
     classDef neutral fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px
@@ -63,34 +64,63 @@ flowchart LR
     style gaussian fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
     style vasp fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
     style oncv_tools fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
-    linkStyle 0,1,2,3,4 stroke:#2563eb,stroke-width:2.5px
-    linkStyle 5,6,7,8,9,10,11,12,13,14,15 stroke:#64748b,stroke-width:1.25px
+    %% 路线 3：PWmat 基本流程（实线，颜色沿用 README 图二）
+    linkStyle 0,1,2 stroke:#2563eb,stroke-width:1.5px
+    %% 路线 4：PWmat 参考密度流程（虚线）
+    linkStyle 6,7,8,9,10,11,12,13,14,15 stroke:#2563eb,stroke-width:1.5px
+    %% 路线 1/2：VASP 基本流程与参考密度流程
+    linkStyle 3,5 stroke:#ea580c,stroke-width:1.5px
+    %% bader 的输出连线
+    linkStyle 4 stroke:#64748b,stroke-width:1.5px
 ```
 
-## 最短工作流
+## 工作流简介
 
-这套方法的本质是：从生成赝势时的原子全电子计算中取得芯电子密度，将其叠加到 PWmat 的赝价电子密度上作为划分参考；`bader` 仍在未叠加芯电子的赝价电子密度上积分。
+这个工作流程可以简述为：从原子全电子计算中取得芯电子密度 $\rho_\mathrm{core}$ ，将其叠加到 PWmat 的赝价电子密度 $\rho_\mathrm{val.}$ 上生成参考密度 $\rho_\mathrm{val.}+\rho_\mathrm{core}$；`bader` 以 $\rho_\mathrm{val.}+\rho_\mathrm{core}$ 为划分参考，在 $\rho_\mathrm{val.}$ 上进行电荷积分。
 
-虽然 `--core-rho` 也接受自定义的模型密度，但正式分析建议按照以下三步生成产生更真实的 `.corecharge` 文件。后文第 1、2、3 节将依次说明各步的原理、操作方法和注意事项。
+生成参考密度时，`convert_rho2cube.x` 通过 `--core-rho` 读取 `.corecharge` 文件，并把其中的球对称芯电子密度叠加到对应元素的原子周围。虽然 `.corecharge` 也可以由用户自行构造，但正式分析建议按照以下三步从 ONCVPSP 获得更可靠的数据。后文第 1、2、3 节将依次说明各步的原理、操作方法和注意事项。
 
 1. 应用 [`run_plot.patch`](../oncvpsp-patch/run_plot.patch)，重新编译 ONCVPSP，使其输出完整的 `!R` 芯电子密度数据。
 2. 从 PWmat 计算所用的 UPF 赝势中提取原子计算输入，重新运行 ONCVPSP。
 3. 从 ONCVPSP 计算报告中提取 `!R` 数据，生成并检查 `.corecharge` 文件。
 
-以下以 Na 为例，展示这三个步骤以及后续 Bader 分析如何串联：
+以下以某个 NaCl 体系为例，展示如何为其中的 Na 原子补充芯电子密度，并将这三个步骤与后续 Bader 分析串联起来。
+
+第 1 步，下载 ONCVPSP 源码，应用补丁并编译：
+
+```bash
+git clone https://github.com/oncvpsp/oncvpsp.git
+cd oncvpsp
+
+patch --dry-run -p1 \
+  < /path/to/bader-tools/oncvpsp-patch/run_plot.patch
+patch -p1 \
+  < /path/to/bader-tools/oncvpsp-patch/run_plot.patch
+
+# After configuring the build, use the command for the chosen build system:
+make
+# Or, for an out-of-source CMake build:
+# cmake --build build
+```
+
+第 2 步，从 Na 的 UPF 赝势恢复输入并重新运行 ONCVPSP：
 
 ```bash
 tool/run_oncvpsp_from_upf.sh Na.UPF \
   --oncvpsp /path/to/oncvpsp/bin \
   -o Na.oncvpsp.stdout
+```
 
+第 3 步，从 ONCVPSP 计算报告中提取 `.corecharge` 文件：
+
+```bash
 tool/extract_oncv_corecharge.sh Na.oncvpsp.stdout \
   --tag R \
   --source-upf Na.UPF \
   -o Na.corecharge
 ```
 
-然后用相同的 PWmat 输入分别生成赝价电子密度和参考密度：
+然后用相同的 PWmat 数据分别生成赝价电子密度和参考密度：
 
 ```bash
 convert_rho2cube.x \
@@ -109,23 +139,25 @@ bader rho.cube -ref rho.ref.cube
 
 其中，`11` 是 Na 的原子序数，`10` 是可选的预期芯电子数；这些参数的含义和检查方法见第 3 节。
 
-## 为什么选择 ONCVPSP
+## ONCVPSP 是一个便利的选择
 
-生成赝势之前，赝势生成程序需要先求解参考原子的全电子问题，因此内部已经具备所需的原子 DFT 全电子计算模块。要重现与赝势一致的芯电子密度，该模块至少需要以下信息：
+生成赝势之前，赝势生成程序需要先求解参考原子的全电子问题，因此内部天然具备所需的原子 DFT 全电子计算模块。要重现与赝势一致的芯电子密度，该模块至少需要以下信息：
 
 1. 交换关联泛函，如 LDA 或 PBE。
 2. 参考原子的电子配置，如 $1s^2 2s^2 2p^6 3s^1$。
 3. 价态与芯态的划分，如把 $1s^2 2s^2 2p^6$ 视为芯电子。
 
-PWmat 提供的许多 UPF 赝势由 ONCVPSP 生成。此类文件通常在 `<PP_INPUTFILE>` 标签中保留原始 ONCVPSP 输入，其中已经包含上述信息。因此，我们认为这将是带来便利最多的选择。
+PWmat 提供的许多 UPF 赝势由 ONCVPSP 生成。此类文件通常在 `<PP_INPUTFILE>` 标签中保留原始 ONCVPSP 输入，其中已经包含上述信息。因此，我们认为这将是操作最便利的选择。
 
 ## 1. 应用补丁并重新编译 ONCVPSP
 
 ONCVPSP 原有的 `!r` 数据块用于绘图，其中的径向网格经过稀疏化和截断，芯电子密度还可能被裁剪。这样的数据适合绘图，却可能无法正确完成参考电荷计算，不宜引入通用方法当中。
 
-本项目提供的 [`run_plot.patch`](../oncvpsp-patch/run_plot.patch) 会新增 `!R` 数据块，输出未经绘图逻辑稀疏化或裁剪的完整芯电子密度。正式分析应使用补丁版 ONCVPSP，并在提取时指定 `--tag R`，避免意外回退到 `!r` 数据。
+`extract_oncv_corecharge.sh` 仍然支持从 `!r` 数据块提取芯电子密度；在默认的 `auto` 模式下，如果找不到 `!R` 数据，脚本会回退到 `!r`。这使无法自行编译补丁版 ONCVPSP、因而选择使用现成程序的用户仍能完成流程，但所得数据不建议用于正式分析。
 
-ONCVPSP 的依赖和构建方式会随版本与计算环境变化。如果不熟悉相关工具，可以把下面的提示词交给 coding agent。使用前，应先替换其中的路径占位符。
+本项目提供的 [`run_plot.patch`](../oncvpsp-patch/run_plot.patch) 会新增 `!R` 数据块，输出未经裁剪的完整芯电子密度。正式分析应使用补丁版 ONCVPSP，并在提取时指定 `--tag R`，明确要求使用 `!R` 数据。
+
+编译 ONCVPSP 需要处理一些依赖，具体构建会随计算需求、依赖库和计算环境而变化，我很难提供一个完整的编译指南，好在 LLM 大人精通这件事。这类与环境密切相关的构建任务很适合交给 coding agent；下面提供一份可直接修改的提示词，使用前请先替换其中的路径占位符。
 
 <details>
 <summary>展开用于编译 ONCVPSP 的提示词</summary>
@@ -189,11 +221,13 @@ ONCVPSP 的依赖和构建方式会随版本与计算环境变化。如果不熟
 
 ## 2. 恢复输入并运行 ONCVPSP
 
-如果 UPF 由 ONCVPSP 生成，其中通常包含 `<PP_INPUTFILE>` 标签，记录生成该赝势时使用的输入。把标签内的内容提取为输入文件，即可重新运行 ONCVPSP。
+ONCVPSP 生成赝势时，通常会将本次计算所用的输入回写到输出 UPF 的 `<PP_INPUTFILE>` 标签中。把标签内的内容提取为输入文件，即可重新运行 ONCVPSP。
 
-还需要根据 UPF 的相对论元数据选择对应的可执行文件。`<PP_HEADER>` 中的 `relativistic` 属性通常为 `scalar`、`full` 或 `nonrelativistic`，分别表示标量相对论、全相对论和非相对论计算。不同 ONCVPSP 版本的可执行文件名称可能不同，例如全相对论版本可能名为 `oncvpspr.x` 或 `oncvpsp_r.x`。
+重新运行时，还需要根据 UPF 的相对论元数据选择对应的可执行文件。`<PP_HEADER>` 中的 `relativistic` 属性通常为 `scalar`、`full` 或 `nonrelativistic`，分别表示标量相对论、全相对论（包含自旋—轨道耦合）和非相对论计算。不同 ONCVPSP 版本采用的可执行文件名称可能不同，例如全相对论版本可能名为 `oncvpspr.x` 或 `oncvpsp_r.x`。
 
-`tool/run_oncvpsp_from_upf.sh` 会提取 `<PP_INPUTFILE>`，综合 UPF 的相对论和自旋—轨道耦合元数据，并选择相应的 ONCVPSP 程序。以下仍以 Na 为例：
+当前 ONCVPSP 通常会构建 `oncvpsp.x`、`oncvpspr.x` 和 `oncvpspnr.x` 三个可执行文件。仅从名称判断，它们似乎分别对应标量相对论、全相对论和非相对论计算；然而，构建规则和源码表明，`oncvpsp.x` 与 `oncvpspnr.x` 实际上都是标量相对论程序。
+
+`tool/run_oncvpsp_from_upf.sh` 会提取 `<PP_INPUTFILE>`，综合 UPF 的 `relativistic` 属性和自旋—轨道耦合数据，并选择相应的 ONCVPSP 程序。以下仍以 Na 为例：
 
 ```bash
 tool/run_oncvpsp_from_upf.sh Na.UPF \
@@ -209,9 +243,23 @@ tool/run_oncvpsp_from_upf.sh Na.UPF \
 
 也可以使用 `--oncvpsp FILE` 强制指定某个可执行文件；此时，脚本对 UPF 类型的推断只用于提示，不再决定所用程序。
 
+#### 关于 UPF 中的自旋—轨道耦合数据格式说明
+
+UPF v2.0.1 规范定义了 `<PP_HEADER>` 中的 `has_so` 属性，却没有完整规定 SOC 数据的存储方式，例如如何记录赝波函数和非局域投影子的总角动量 $j$。因此，实际使用中存在不同的扩展约定。
+
+一种做法是将 `has_so` 设为 `true`，保留各个 $j=l\pm\frac{1}{2}$ 通道，并为赝波函数和非局域投影子补充总角动量 $j$ 信息。不同赝势库可能将这些信息直接写入原有标签，也可能放在额外的 `<PP_SPIN_ORB>` 数据块中。
+
+PWmat 采用了另一种专用约定。将 `has_so` 设为 `false`, 同一 $l$ 下的 $j=l\pm\frac{1}{2}$ 通道重组为无自旋的标量部分和 SOC 修正项：前者仍记为普通的 `angular_momentum=0/1/2/3`，后者对应 $l=1/2/3$ 时分别记为 `angular_momentum=10/20/30`。
+
+这种设计有两个特点：
+
+1. 由于离心势的作用, 截断半径内的非局域赝势不会包含太大的角动量通道. oncvpsp 的 `angular_momentum` 最大值是 3. 
+2. $s$ 通道不产生 SOC 分裂, 不存在 `00` 编号的 SOC 修正项, 因此不会与普通的 $l$ 值混淆。
+3. 如果存在一个只能识别并执行非 SOC 计算的程序, 它只按照过去的习惯读取 `has_so=false` 和 无自旋的标量项, 就能进行正确的工作了. 它最多只需要在程序中设置自己的 `lmax`.  
+
 ### UPF 中没有 `<PP_INPUTFILE>` 时
 
-如果 UPF 没有保留原始输入，只能手工构造 ONCVPSP 输入。可以从 ONCVPSP 的测试目录或其他 UPF 文件中复制一份模板，例如：
+如果 UPF 没有保留原始输入，只能手工构造 ONCVPSP 输入。可以从 ONCVPSP 的测试目录或其他 UPF 文件中复制一份模板。一个  ONCVPSP 输入示例如下：
 
 ```text
 # ATOM AND REFERENCE CONFIGURATION
@@ -229,7 +277,7 @@ tool/run_oncvpsp_from_upf.sh Na.UPF \
 ......
 ```
 
-这个示例只展示输入开头的**全电子计算阶段**参数，后面还需要提供**赝离子化阶段**参数。所需的芯电子密度由全电子计算阶段决定；后续参数只须保证 ONCVPSP 能够正常完成计算，但不会改变已经确定的芯电子配置。
+这个示例只展示输入开头的**全电子计算阶段**参数，后面还需要提供**赝离子化阶段**参数。所需的芯电子密度由全电子计算阶段决定；后续参数只须保证 ONCVPSP 能够正常完成计算，它们不会影响芯电子电荷密度。
 
 连续以 `#` 开头的行是注释或分隔行，程序会跳过。第一个数据行的字段含义如下：
 
@@ -265,7 +313,19 @@ ONCVPSP 内置的常用 `iexc` 编号如下：
 
 ## 3. 提取并检查芯电子密度
 
-按照 ONCVPSP 的习惯，`!r` 和 `!R` 数据块中的芯电子密度包含 $4\pi$ 因子。`tool/extract_oncv_corecharge.sh` 会提取径向数据并除以 $4\pi$，生成符合 `convert_rho2cube.x --core-rho` 要求的两列表格；不要再次手工除以 $4\pi$。
+按照 ONCVPSP 的约定，`!r` 和 `!R` 数据块输出的是 $4\pi\rho_\mathrm{core}(r)$，即
+
+$$
+\int_0^\infty r^2 \rho^\mathrm{ONCV}_\mathrm{core}(r)\,\mathrm{d}r=N_\mathrm{core}.
+$$
+
+`convert_rho2cube.x --core-rho` 接受的两列表格则不包含 $4\pi$ 因子，其积分约定为
+
+$$
+4\pi\int_0^\infty r^2\rho^\text{--core-rho}_\mathrm{core}(r)\,\mathrm{d}r=N_\mathrm{core}.
+$$
+
+`tool/extract_oncv_corecharge.sh` 会提取 ONCVPSP 的径向数据并除以一次 $4\pi$，生成符合 `--core-rho` 要求的两列表格。
 
 以下仍以 Na 为例。推荐显式要求完整的 `!R` 数据：
 
@@ -276,41 +336,33 @@ tool/extract_oncv_corecharge.sh Na.oncvpsp.stdout \
   -o Na.corecharge
 ```
 
-`--tag R` 要求报告中存在补丁版 ONCVPSP 输出的完整 `!R` 数据，不允许回退到为绘图裁剪过的 `!r` 数据。脚本会检查数据格式和半径单调性，计算并报告芯电子积分，并在验证成功后才发布输出文件。
+`--tag R` 要求报告中存在补丁版 ONCVPSP 输出的完整 `!R` 数据，不允许回退到 `!r` 数据。脚本会检查数据格式和半径单调性，计算并报告芯电子积分，只有验证成功后才发布输出文件。
 
-### 核对芯电子数
+## 核对芯电子数（建议）
 
-`convert_rho2cube.x --core-rho` 对 `.corecharge` 文件的格式要求和读取方式见 [code-usages.md](code-usages.md) 的“芯电子密度表格式”一节。这里主要检查提取结果是否与实际使用的赝势一致。
-
-提取脚本报告的径向积分应满足
-
-$$
-4\pi\int_0^\infty r^2\rho_\mathrm{core}(r)\,\mathrm{d}r=N_\mathrm{core}.
-$$
-
-应核对脚本报告的积分是否与所用赝势的价、芯电子划分一致。对原子序数为 $Z$、赝势价电子数为 $z_\mathrm{valence}$ 的元素，预期芯电子数通常为
+建议将提取脚本报告的芯电子积分与预期值比较，以确认 `.corecharge` 和实际使用的赝势具有相同的价、芯电子划分。预期芯电子数为
 
 $$
 Q_\mathrm{core} = Z - z_\mathrm{valence}.
 $$
 
-把该值作为 `--core-rho` 的可选 `QCORE` 参数，可以让 `convert_rho2cube.x` 再次检查芯电子密度表。以 Na 为例，原子序数是 `11`；如果所用赝势包含 1 个价电子，则 `QCORE = 11 - 1 = 10`：
+其中，$Z$ 是原子序数，$z_\mathrm{valence}$ 是赝势价电子数，通常可以从 UPF 的 `z_valence` 元数据中读取。以 Na 为例，若所用赝势包含 1 个价电子，则 $Q_\mathrm{core}=11-1=10$。将该值作为 `--core-rho` 的可选 `QCORE` 参数，程序便会自动比较：
 
 ```text
 --core-rho 11 Na.corecharge 10
 ```
 
-省略 `QCORE` 不影响参考密度的生成，但程序不会比较预期芯电子数。该检查只会给出警告；最终仍需由使用者确认密度表与实际赝势匹配。
+省略 `QCORE` 不影响参考密度的生成，只会跳过这项比较；发现不一致时，程序会给出警告。
 
-### 生成参考密度并运行 Bader 分析
+## 生成参考密度并运行 Bader 分析
 
-`--core-rho Z CORECHARGE_PATH [QCORE]` 对所有原子序数为 `Z`、位置为 $\{\boldsymbol{\tau}_i\}$ 的原子叠加
+`--core-rho Z CORECHARGE_PATH [QCORE]` 将表中的球对称芯电子密度叠加到所有原子序数为 `Z` 的原子周围。若这些原子的位置为 $\{\boldsymbol{\tau}_i\}$，则叠加的密度为
 
 $$
-\sum_i \rho_\mathrm{core}\bigl(\boldsymbol{r}-\boldsymbol{\tau}_i\bigr),
+\sum_i \rho_\mathrm{core}\bigl(\lvert\boldsymbol{r}-\boldsymbol{\tau}_i\rvert\bigr).
 $$
 
-并计入晶胞的周期像。体系包含多种元素时，可以只为你认为值得修正的元素们指定一次 `--core-rho`。
+程序还会计入这些原子的周期像。体系包含多种元素时，可对每种需要补充芯电子密度的元素分别指定一次 `--core-rho`。
 
 使用相同的 PWmat 数据运行两次 `convert_rho2cube.x`：
 

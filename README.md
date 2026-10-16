@@ -63,11 +63,9 @@ flowchart LR
     chgcar --> bader
     bader --> charge@{ shape: doc, label: "Bader charge<br/>分析结果" }
 
-    classDef adapter fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:2.5px
-    classDef program fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px
+    classDef program fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:2.5px
     classDef file fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px
-    class convert adapter
-    class bader program
+    class convert,bader program
     class atom,rho,rho_cube,chgcar,charge file
     style pwmat fill:#ffffff,stroke:#2563eb,stroke-dasharray:5 5
     style gaussian fill:#ffffff,stroke:#94a3b8,stroke-dasharray:5 5
@@ -107,7 +105,7 @@ make BINDIR=/path/to/bin install
 
 ## 快速开始
 
-假设当前 PWmat 计算目录中包含原子结构文件和 `OUT.RHO`，可先将电荷密度转换为 cube 格式：
+假设当前 PWmat 计算目录中包含原子结构文件和 `OUT.RHO`，先将电荷密度转换为 cube 格式：
 
 ```bash
 convert_rho2cube.x -a atom.config -r OUT.RHO -o rho.cube
@@ -121,7 +119,7 @@ convert_rho2cube.x -a atom.config -r OUT.RHO -o rho.cube
 bader rho.cube
 ```
 
-`bader` 程序的使用方法详见 [bader-usage.md](note/bader-usage.md)。
+`bader` 程序的使用方法可以参见 [bader-usage.md](note/bader-usage.md)。
 
 对于共线自旋极化（`SPIN=2`）计算，需要将两个自旋通道相加：
 
@@ -134,6 +132,6 @@ convert_rho2cube.x \
 bader rho.cube
 ```
 
-## 高级使用方法：全电子参考密度修正
+### 高级使用方法："全电子"参考密度
 
 在采用冻结芯近似的赝势计算中，输出的电荷密度通常不包含芯电子，因而可能影响 Bader 体积的划分。问题背景及 PWmat 下的解决思路参见 [core-rho-correction.md](note/core-rho-correction.md)，具体操作流程参见 [bader-reference-density.md](docs/bader-reference-density.md)。
