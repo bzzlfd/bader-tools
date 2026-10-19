@@ -1,0 +1,1713 @@
+{
+  "description": "NaCl Bader analysis with -b weight. Exact Decimal values are derived from the printed ACF CHARGE tokens; eight decimal places do not imply physical accuracy. Paths refer to published repository files; generated filenames identify analysis intermediates.",
+  "definition": "Na_transfer = zval_Na - mean(CHARGE[Na]); Cl_gain = mean(CHARGE[Cl]) - 7. Atoms 1-4 Na, 5-8 Cl. Reference partitions only; primary valence density integrated.",
+  "environment": {
+    "bader_version": "1.05 (2023-08-19)",
+    "bader_sha256": "84c8670cd8a721935bc20882d0659ef8e76aa288733dcf6c8cdd81f6b3c457ac",
+    "converter": "convert_rho2cube.x",
+    "converter_sha256": "3619486df9a36b940bc6046d1661ce0a002895c52cbecf626827468b0bd87e16",
+    "conditions": 23,
+    "all_algorithms": "weight"
+  },
+  "core_checks": {
+    "Cl-LDA.corecharge": {
+      "sha256": "0546f3cbff127052b169b203f57bb74f18d3ff081064f4900da2a5fa8c069a77",
+      "integral_e": 10.000059641692491,
+      "expected_e": 10
+    },
+    "Cl-PBE.corecharge": {
+      "sha256": "ae9153583d4d90b361b37bcba4cba72f59a919e8c6c435667b3986b3dea95c4b",
+      "integral_e": 10.000059641689356,
+      "expected_e": 10
+    },
+    "Na1-LDA.corecharge": {
+      "sha256": "8a78dc16035368e5f24a858fa54e30cbccab8174f94d01532a5195295619d97e",
+      "integral_e": 10.000059641737643,
+      "expected_e": 10
+    },
+    "Na1-PBE.corecharge": {
+      "sha256": "4eb7186074935b2736809f7ff48f0c60123abbc88e215ca8f82d36d1fe00f160",
+      "integral_e": 10.000059641733776,
+      "expected_e": 10
+    },
+    "Na9-PBE.corecharge": {
+      "sha256": "fc3f6470679c796d18fd2e7e3ba95b5ce16cdd388de1f60dafbbb9eaf1802156",
+      "integral_e": 2.0000119280889415,
+      "expected_e": 2
+    }
+  },
+  "vasp_datasets": {
+    "NaCl.VASP_Na9Cl7_48": {
+      "grid": [
+        48,
+        48,
+        48
+      ],
+      "zval_Na": 9,
+      "zval_Cl": 7,
+      "functional": "PBE",
+      "primary_integral_e": 63.9996633718342,
+      "reference_sum_checked": true,
+      "POTCAR_metadata": {
+        "sha256": "51f809a59129fd2d14b9662cb1315e82952b3664484f9224c67193c0b5b3e275",
+        "labels": [
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Na_sv 28Sep2000",
+          "   POMASS =   22.990; ZVAL   =    9.000    mass and valenz",
+          "   ENMAX  =  645.640; ENMIN  =  484.230 eV",
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Cl 06Sep2000",
+          "   POMASS =   35.453; ZVAL   =    7.000    mass and valenz",
+          "   ENMAX  =  262.472; ENMIN  =  196.854 eV"
+        ]
+      },
+      "files": {
+        "CHGCAR": {
+          "path": "example/NaCl.VASP_Na9Cl7_48/CHGCAR",
+          "sha256": "afc8afeafb181a899a153e2113b3de80e5e920ba2677af02247b63f0d0dfff60"
+        },
+        "AECCAR0": {
+          "path": "example/NaCl.VASP_Na9Cl7_48/AECCAR0",
+          "sha256": "5839639b12ace065ec41f55706a678418109011b8ab09029236f78ae71759e06"
+        },
+        "AECCAR2": {
+          "path": "example/NaCl.VASP_Na9Cl7_48/AECCAR2",
+          "sha256": "31acfff421948b2d0276e19f695814be542b878bf52503a02c7ebae2dbd5759f"
+        },
+        "INCAR": {
+          "path": "example/NaCl.VASP_Na9Cl7_48/INCAR",
+          "sha256": "d970db283f9be67b310edc098a0f2863e1cd65e50fff561886816bf88c341c98"
+        },
+        "POSCAR": {
+          "path": "example/NaCl.VASP_Na9Cl7_48/POSCAR",
+          "sha256": "7944b8dd395dbd4abd7e511f99effac77ddb9a18aa04ab6a92ca18f16b28d23c"
+        },
+        "KPOINTS": {
+          "path": "example/NaCl.VASP_Na9Cl7_48/KPOINTS",
+          "sha256": "a675c2e16f8e7f6150ee90dbe3121d2b2159e91933edf6d377d1266ed6afbac5"
+        }
+      }
+    },
+    "NaCl.VASP_Na1Cl7_36": {
+      "grid": [
+        36,
+        36,
+        36
+      ],
+      "zval_Na": 1,
+      "zval_Cl": 7,
+      "functional": "PBE",
+      "primary_integral_e": 32.00000535918805,
+      "reference_sum_checked": true,
+      "POTCAR_metadata": {
+        "sha256": "734387179664f94f442b87f2e0118eedf303bd260d438db29f4545589068250e",
+        "labels": [
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Na 08Apr2002",
+          "   POMASS =   22.990; ZVAL   =    1.000    mass and valenz",
+          "   ENMAX  =  101.968; ENMIN  =   76.476 eV",
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Cl 06Sep2000",
+          "   POMASS =   35.453; ZVAL   =    7.000    mass and valenz",
+          "   ENMAX  =  262.472; ENMIN  =  196.854 eV"
+        ]
+      },
+      "files": {
+        "CHGCAR": {
+          "path": "example/NaCl.VASP_Na1Cl7_36/CHGCAR",
+          "sha256": "921f55172061d72d1d0661a5f6813c99470676dea7ecc920a208ea866075daff"
+        },
+        "AECCAR0": {
+          "path": "example/NaCl.VASP_Na1Cl7_36/AECCAR0",
+          "sha256": "fc18e0de360b10f3cdea7c6f727a4a2ba03dc418e31f932fd9a297135ad88ba4"
+        },
+        "AECCAR2": {
+          "path": "example/NaCl.VASP_Na1Cl7_36/AECCAR2",
+          "sha256": "8a65c88273cd1f42f1e797b891da6a98e3fdb5c1ad5fd7b358893a3bd23f1521"
+        },
+        "INCAR": {
+          "path": "example/NaCl.VASP_Na1Cl7_36/INCAR",
+          "sha256": "f18dc8da99f13272c040081a29bb3cee4eec44c1386aa9eda06a4fa15a08ca43"
+        },
+        "POSCAR": {
+          "path": "example/NaCl.VASP_Na1Cl7_36/POSCAR",
+          "sha256": "7944b8dd395dbd4abd7e511f99effac77ddb9a18aa04ab6a92ca18f16b28d23c"
+        },
+        "KPOINTS": {
+          "path": "example/NaCl.VASP_Na1Cl7_36/KPOINTS",
+          "sha256": "a675c2e16f8e7f6150ee90dbe3121d2b2159e91933edf6d377d1266ed6afbac5"
+        }
+      }
+    },
+    "NaCl.VASP_Na9Cl7_160": {
+      "grid": [
+        160,
+        160,
+        160
+      ],
+      "zval_Na": 9,
+      "zval_Cl": 7,
+      "functional": "PBE",
+      "primary_integral_e": 63.99999923963322,
+      "reference_sum_checked": true,
+      "POTCAR_metadata": {
+        "sha256": "51f809a59129fd2d14b9662cb1315e82952b3664484f9224c67193c0b5b3e275",
+        "labels": [
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Na_sv 28Sep2000",
+          "   POMASS =   22.990; ZVAL   =    9.000    mass and valenz",
+          "   ENMAX  =  645.640; ENMIN  =  484.230 eV",
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Cl 06Sep2000",
+          "   POMASS =   35.453; ZVAL   =    7.000    mass and valenz",
+          "   ENMAX  =  262.472; ENMIN  =  196.854 eV"
+        ]
+      },
+      "files": {
+        "CHGCAR": {
+          "path": "example/NaCl.VASP_Na9Cl7_160/CHGCAR",
+          "sha256": "322f009f98fd167e3e2ccde2d41f6610f0b8db6ad914407ce77a63bb13dafa66"
+        },
+        "AECCAR0": {
+          "path": "example/NaCl.VASP_Na9Cl7_160/AECCAR0",
+          "sha256": "7b64027e9a79e2493a5e0ff3a1826650335c03da95d3aed15165bea3027e3765"
+        },
+        "AECCAR2": {
+          "path": "example/NaCl.VASP_Na9Cl7_160/AECCAR2",
+          "sha256": "9cdcd0dd029d9063e49778ec893a64abd0cacb2356819332dc1f53a4b735a1ad"
+        },
+        "INCAR": {
+          "path": "example/NaCl.VASP_Na9Cl7_160/INCAR",
+          "sha256": "0ce00b305f1c7e1ab43736a2597de58b34998a69255a8631c99840c073746d3a"
+        },
+        "POSCAR": {
+          "path": "example/NaCl.VASP_Na9Cl7_160/POSCAR",
+          "sha256": "7944b8dd395dbd4abd7e511f99effac77ddb9a18aa04ab6a92ca18f16b28d23c"
+        },
+        "KPOINTS": {
+          "path": "example/NaCl.VASP_Na9Cl7_160/KPOINTS",
+          "sha256": "a675c2e16f8e7f6150ee90dbe3121d2b2159e91933edf6d377d1266ed6afbac5"
+        }
+      }
+    },
+    "NaCl.VASP_Na1Cl7_120": {
+      "grid": [
+        120,
+        120,
+        120
+      ],
+      "zval_Na": 1,
+      "zval_Cl": 7,
+      "functional": "PBE",
+      "primary_integral_e": 32.000000152707855,
+      "reference_sum_checked": true,
+      "POTCAR_metadata": {
+        "sha256": "734387179664f94f442b87f2e0118eedf303bd260d438db29f4545589068250e",
+        "labels": [
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Na 08Apr2002",
+          "   POMASS =   22.990; ZVAL   =    1.000    mass and valenz",
+          "   ENMAX  =  101.968; ENMIN  =   76.476 eV",
+          "   LEXCH  = PE",
+          "   TITEL  = PAW_PBE Cl 06Sep2000",
+          "   POMASS =   35.453; ZVAL   =    7.000    mass and valenz",
+          "   ENMAX  =  262.472; ENMIN  =  196.854 eV"
+        ]
+      },
+      "files": {
+        "CHGCAR": {
+          "path": "example/NaCl.VASP_Na1Cl7_120/CHGCAR",
+          "sha256": "a19d6fc380407d9331d421d143cbb59161d222045e04b499ad6b867c843328f3"
+        },
+        "AECCAR0": {
+          "path": "example/NaCl.VASP_Na1Cl7_120/AECCAR0",
+          "sha256": "bbc2cb21799bf1c54a706338a659300eea7312a2967129a459ff813ee0d02b80"
+        },
+        "AECCAR2": {
+          "path": "example/NaCl.VASP_Na1Cl7_120/AECCAR2",
+          "sha256": "f3adadd289b5abc6e15009692337bfc7199ac1a5f585794b13388718f86bd145"
+        },
+        "INCAR": {
+          "path": "example/NaCl.VASP_Na1Cl7_120/INCAR",
+          "sha256": "4b4776cf91870cb2e0e3d1928ac2aa058adcd774c2fcc21392bd009c3e3e2560"
+        },
+        "POSCAR": {
+          "path": "example/NaCl.VASP_Na1Cl7_120/POSCAR",
+          "sha256": "7944b8dd395dbd4abd7e511f99effac77ddb9a18aa04ab6a92ca18f16b28d23c"
+        },
+        "KPOINTS": {
+          "path": "example/NaCl.VASP_Na1Cl7_120/KPOINTS",
+          "sha256": "a675c2e16f8e7f6150ee90dbe3121d2b2159e91933edf6d377d1266ed6afbac5"
+        }
+      }
+    }
+  },
+  "pwmat_datasets": {
+    "NaCl.SG15PBE": {
+      "files": [
+        {
+          "path": "example/NaCl.SG15PBE/atom.config",
+          "sha256": "7931a0ab93b8bb7bdc5aac15e42cd41d94773d4814084806c2fb2fb02e05cfed"
+        },
+        {
+          "path": "example/NaCl.SG15PBE/OUT.RHO",
+          "sha256": "6d37961e04c2e30bf0825cb4b8ae6792df1eccfa7cd2d7bc2508293d6bef0fea"
+        },
+        {
+          "path": "example/NaCl.SG15PBE/Cl.SG15.PBE.UPF",
+          "sha256": "617cfe5bc97029c2d16ebe6c5a37b5d5813c6c8f1cf1b9e6b03b97f8eda7bbdd"
+        },
+        {
+          "path": "example/NaCl.SG15PBE/Na.SG15.PBE.UPF",
+          "sha256": "6e2502a4cd175f4a0bacd9b4e6eb5944059a18ff7c33bbb820d79a269b372e1c"
+        }
+      ]
+    },
+    "NaCl.SG15PBE.SPIN2": {
+      "files": [
+        {
+          "path": "example/NaCl.SG15PBE.SPIN2/atom.config",
+          "sha256": "7931a0ab93b8bb7bdc5aac15e42cd41d94773d4814084806c2fb2fb02e05cfed"
+        },
+        {
+          "path": "example/NaCl.SG15PBE.SPIN2/OUT.RHO",
+          "sha256": "672e80a921e34ba05da988415a4b2fa31558e133e5dd5c17f1d0cd8f3ac6ee99"
+        },
+        {
+          "path": "example/NaCl.SG15PBE.SPIN2/Cl.SG15.PBE.UPF",
+          "sha256": "617cfe5bc97029c2d16ebe6c5a37b5d5813c6c8f1cf1b9e6b03b97f8eda7bbdd"
+        },
+        {
+          "path": "example/NaCl.SG15PBE.SPIN2/Na.SG15.PBE.UPF",
+          "sha256": "6e2502a4cd175f4a0bacd9b4e6eb5944059a18ff7c33bbb820d79a269b372e1c"
+        },
+        {
+          "path": "example/NaCl.SG15PBE.SPIN2/OUT.RHO_2",
+          "sha256": "411b3da3ebcd761692ae752766634a138d92da1bd5984658b99e51761773fba3"
+        }
+      ]
+    },
+    "NaCl.zval1.SG15PBE": {
+      "files": [
+        {
+          "path": "example/NaCl.zval1.SG15PBE/atom.config",
+          "sha256": "7931a0ab93b8bb7bdc5aac15e42cd41d94773d4814084806c2fb2fb02e05cfed"
+        },
+        {
+          "path": "example/NaCl.zval1.SG15PBE/OUT.RHO",
+          "sha256": "12081be8f267fcde9dda6e0c90a858484270137da194061e5a29043980ad4325"
+        },
+        {
+          "path": "example/NaCl.zval1.SG15PBE/Cl.SG15.PBE.UPF",
+          "sha256": "617cfe5bc97029c2d16ebe6c5a37b5d5813c6c8f1cf1b9e6b03b97f8eda7bbdd"
+        },
+        {
+          "path": "example/NaCl.zval1.SG15PBE/Na.z1.ONCV.PBE.UPF",
+          "sha256": "cdd6c2dfc6872b9343e2988211f4a951a759ae6fc539d89663fb601c9b744503"
+        }
+      ]
+    },
+    "NaCl.FHILDA": {
+      "files": [
+        {
+          "path": "example/NaCl.FHILDA/atom.config",
+          "sha256": "7931a0ab93b8bb7bdc5aac15e42cd41d94773d4814084806c2fb2fb02e05cfed"
+        },
+        {
+          "path": "example/NaCl.FHILDA/OUT.RHO",
+          "sha256": "84e0977b936377da68104bcc5a531a6c047807ebaa6d4c568a94df3f3a4b45db"
+        },
+        {
+          "path": "example/NaCl.FHILDA/Cl.FHI.LDA.UPF",
+          "sha256": "dfd2fff2396854d0247bc31ed6aa2db212956b2deeee7b5ffacdff51e6c2c35c"
+        },
+        {
+          "path": "example/NaCl.FHILDA/Na.FHI.LDA.UPF",
+          "sha256": "343ab351bef4f58859f065949bba0aeb89ab9dcaa30d6c2448e0e87dbb1b3858"
+        }
+      ]
+    }
+  },
+  "henkelman_datasets": {
+    "Henkelman-Na9": {
+      "url": "https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl.tar.gz",
+      "archive_sha256": "ba6a445d186558a1137037e2cb7641e2535eef935aaaf9ff1ed184b9fd608f00",
+      "primary_member": "NaCl/CHG_NaCl",
+      "reference_member": null
+    },
+    "Henkelman-Na1": {
+      "url": "https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl_wcore.tar.gz",
+      "archive_sha256": "c280e44d22da8811e3a61f33a7bbf601aabc7dfb760617b840ad0f5769245f06",
+      "primary_member": "NaCl_wcore/CHGCAR",
+      "reference_member": "NaCl_wcore/CHGCAR_sum"
+    }
+  },
+  "results": [
+    {
+      "dataset": "NaCl.VASP_Na9Cl7_48",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "48x48x48",
+      "mean_Na_e": "8.12230275",
+      "Na_transfer_e_per_Na": "0.87769725",
+      "mean_Cl_e": "7.87761300",
+      "Cl_gain_e_per_Cl": "0.87761300",
+      "transfer_mismatch_e": "0.00008425",
+      "sum_atomic_e": "63.99966300",
+      "Na_range_e": "0.00001400",
+      "Cl_range_e": "0.00001400",
+      "atomic_CHARGE_tokens": [
+        "8.122300",
+        "8.122312",
+        "8.122298",
+        "8.122301",
+        "7.877606",
+        "7.877616",
+        "7.877610",
+        "7.877620"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    8.122300     1.065849     9.594341\n    2    1.421132    4.263395    1.421132    8.122312     1.065849     9.594418\n    3    1.421132    1.421132    4.263395    8.122298     1.065849     9.594326\n    4    4.263395    4.263395    4.263395    8.122301     1.065849     9.594338\n    5    1.421132    1.421132    1.421132    7.877606     1.657987    36.327811\n    6    4.263395    4.263395    1.421132    7.877616     1.657987    36.327894\n    7    4.263395    1.421132    4.263395    7.877610     1.657987    36.327854\n    8    1.421132    4.263395    4.263395    7.877620     1.657987    36.327941\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "2149923c3b3374a8877624638a95b669e7881a50e07a4a21deb0fc34d0254fbd",
+      "inputs": {
+        "primary": {
+          "sha256": "afc8afeafb181a899a153e2113b3de80e5e920ba2677af02247b63f0d0dfff60",
+          "path": "example/NaCl.VASP_Na9Cl7_48/CHGCAR"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na9Cl7_48",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "48x48x48",
+      "mean_Na_e": "8.12233975",
+      "Na_transfer_e_per_Na": "0.87766025",
+      "mean_Cl_e": "7.87757625",
+      "Cl_gain_e_per_Cl": "0.87757625",
+      "transfer_mismatch_e": "0.00008400",
+      "sum_atomic_e": "63.99966400",
+      "Na_range_e": "0.00001200",
+      "Cl_range_e": "0.00001200",
+      "atomic_CHARGE_tokens": [
+        "8.122337",
+        "8.122348",
+        "8.122336",
+        "8.122338",
+        "7.877570",
+        "7.877579",
+        "7.877574",
+        "7.877582"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    8.122337     1.065849     9.595727\n    2    1.421132    4.263395    1.421132    8.122348     1.065849     9.595760\n    3    1.421132    1.421132    4.263395    8.122336     1.065849     9.595724\n    4    4.263395    4.263395    4.263395    8.122338     1.065849     9.595733\n    5    1.421132    1.421132    1.421132    7.877570     1.657987    36.326474\n    6    4.263395    4.263395    1.421132    7.877579     1.657987    36.326501\n    7    4.263395    1.421132    4.263395    7.877574     1.657987    36.326492\n    8    1.421132    4.263395    4.263395    7.877582     1.657987    36.326513\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "1d3d46f0cdb212df30181be912b98ea09f152be3a463317792138769cbd60ea5",
+      "inputs": {
+        "primary": {
+          "sha256": "afc8afeafb181a899a153e2113b3de80e5e920ba2677af02247b63f0d0dfff60",
+          "path": "example/NaCl.VASP_Na9Cl7_48/CHGCAR"
+        },
+        "reference": {
+          "sha256": "7608f1fbc901330e8b1ad5416d74b7384ed3e3771097d52dccd9c5dfa8eab877",
+          "generated_filename": "CHGCAR_sum",
+          "construction": "AECCAR0 + AECCAR2 from the matching example dataset"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight",
+        "-ref",
+        "CHGCAR_sum"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na1Cl7_36",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.00541500",
+      "Na_transfer_e_per_Na": "0.99458500",
+      "mean_Cl_e": "7.99458625",
+      "Cl_gain_e_per_Cl": "0.99458625",
+      "transfer_mismatch_e": "-0.00000125",
+      "sum_atomic_e": "32.00000500",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000300",
+      "atomic_CHARGE_tokens": [
+        "0.005415",
+        "0.005415",
+        "0.005415",
+        "0.005415",
+        "7.994587",
+        "7.994584",
+        "7.994587",
+        "7.994587"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    0.005415     0.315807     0.634057\n    2    1.421132    4.263395    1.421132    0.005415     0.315807     0.634050\n    3    1.421132    1.421132    4.263395    0.005415     0.315807     0.634055\n    4    4.263395    4.263395    4.263395    0.005415     0.315807     0.634062\n    5    1.421132    1.421132    1.421132    7.994587     1.786474    45.288181\n    6    4.263395    4.263395    1.421132    7.994584     1.786474    45.288138\n    7    4.263395    1.421132    4.263395    7.994587     1.786474    45.288210\n    8    1.421132    4.263395    4.263395    7.994587     1.786474    45.288169\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "8408bbeba623e7a33013840dc72a92762c07069341c774c5d336b3d5e981fcc0",
+      "inputs": {
+        "primary": {
+          "sha256": "921f55172061d72d1d0661a5f6813c99470676dea7ecc920a208ea866075daff",
+          "path": "example/NaCl.VASP_Na1Cl7_36/CHGCAR"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na1Cl7_36",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.17586425",
+      "Na_transfer_e_per_Na": "0.82413575",
+      "mean_Cl_e": "7.82413725",
+      "Cl_gain_e_per_Cl": "0.82413725",
+      "transfer_mismatch_e": "-0.00000150",
+      "sum_atomic_e": "32.00000600",
+      "Na_range_e": "0.00000100",
+      "Cl_range_e": "0.00000200",
+      "atomic_CHARGE_tokens": [
+        "0.175864",
+        "0.175864",
+        "0.175865",
+        "0.175864",
+        "7.824138",
+        "7.824136",
+        "7.824137",
+        "7.824138"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    0.175864     1.047413     9.966069\n    2    1.421132    4.263395    1.421132    0.175864     1.047413     9.966069\n    3    1.421132    1.421132    4.263395    0.175865     1.047413     9.966069\n    4    4.263395    4.263395    4.263395    0.175864     1.047413     9.966069\n    5    1.421132    1.421132    1.421132    7.824138     1.579035    35.956170\n    6    4.263395    4.263395    1.421132    7.824136     1.579035    35.956155\n    7    4.263395    1.421132    4.263395    7.824137     1.579035    35.956151\n    8    1.421132    4.263395    4.263395    7.824138     1.579035    35.956171\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "145fc483a5bfc885615ae2c963ece816a1cef9e861b19feec161535f507fcb46",
+      "inputs": {
+        "primary": {
+          "sha256": "921f55172061d72d1d0661a5f6813c99470676dea7ecc920a208ea866075daff",
+          "path": "example/NaCl.VASP_Na1Cl7_36/CHGCAR"
+        },
+        "reference": {
+          "sha256": "b8496bb0bfb48caf1b0bafe09fc94e858dc8ebd2a85e65df889d90173a5f3e1e",
+          "generated_filename": "CHGCAR_sum",
+          "construction": "AECCAR0 + AECCAR2 from the matching example dataset"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight",
+        "-ref",
+        "CHGCAR_sum"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na9Cl7_160",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "160x160x160",
+      "mean_Na_e": "8.11728750",
+      "Na_transfer_e_per_Na": "0.88271250",
+      "mean_Cl_e": "7.88271225",
+      "Cl_gain_e_per_Cl": "0.88271225",
+      "transfer_mismatch_e": "0.00000025",
+      "sum_atomic_e": "63.99999900",
+      "Na_range_e": "0.00001400",
+      "Cl_range_e": "0.00001600",
+      "atomic_CHARGE_tokens": [
+        "8.117285",
+        "8.117297",
+        "8.117283",
+        "8.117285",
+        "7.882704",
+        "7.882716",
+        "7.882709",
+        "7.882720"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    8.117285     1.101377     9.466670\n    2    1.421132    4.263395    1.421132    8.117297     1.101377     9.466744\n    3    1.421132    1.421132    4.263395    8.117283     1.101377     9.466649\n    4    4.263395    4.263395    4.263395    8.117285     1.101377     9.466659\n    5    1.421132    1.421132    1.421132    7.882704     1.705358    36.455484\n    6    4.263395    4.263395    1.421132    7.882716     1.705358    36.455570\n    7    4.263395    1.421132    4.263395    7.882709     1.705358    36.455525\n    8    1.421132    4.263395    4.263395    7.882720     1.705358    36.455622\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        64.0000\n",
+      "ACF_sha256": "71aa1610a95b92eb9cd19c843ba10f201ef3056f55ef3193c2ecf647a37c61ed",
+      "inputs": {
+        "primary": {
+          "sha256": "322f009f98fd167e3e2ccde2d41f6610f0b8db6ad914407ce77a63bb13dafa66",
+          "path": "example/NaCl.VASP_Na9Cl7_160/CHGCAR"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na9Cl7_160",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "160x160x160",
+      "mean_Na_e": "8.11733250",
+      "Na_transfer_e_per_Na": "0.88266750",
+      "mean_Cl_e": "7.88266700",
+      "Cl_gain_e_per_Cl": "0.88266700",
+      "transfer_mismatch_e": "0.00000050",
+      "sum_atomic_e": "63.99999800",
+      "Na_range_e": "0.00001300",
+      "Cl_range_e": "0.00001400",
+      "atomic_CHARGE_tokens": [
+        "8.117330",
+        "8.117341",
+        "8.117328",
+        "8.117331",
+        "7.882660",
+        "7.882670",
+        "7.882664",
+        "7.882674"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    8.117330     1.101377     9.468355\n    2    1.421132    4.263395    1.421132    8.117341     1.101377     9.468384\n    3    1.421132    1.421132    4.263395    8.117328     1.101377     9.468353\n    4    4.263395    4.263395    4.263395    8.117331     1.101377     9.468360\n    5    1.421132    1.421132    1.421132    7.882660     1.705358    36.453844\n    6    4.263395    4.263395    1.421132    7.882670     1.705358    36.453874\n    7    4.263395    1.421132    4.263395    7.882664     1.705358    36.453864\n    8    1.421132    4.263395    4.263395    7.882674     1.705358    36.453888\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        64.0000\n",
+      "ACF_sha256": "d7408e08e8080337036a91f7716721b7030d2668bcf9edfc4135b0231a91d55a",
+      "inputs": {
+        "primary": {
+          "sha256": "322f009f98fd167e3e2ccde2d41f6610f0b8db6ad914407ce77a63bb13dafa66",
+          "path": "example/NaCl.VASP_Na9Cl7_160/CHGCAR"
+        },
+        "reference": {
+          "sha256": "42d175622b6cc5adbf154e00229fcfd57b2e42858174dd8203d211f7edf95dbb",
+          "generated_filename": "CHGCAR_sum",
+          "construction": "AECCAR0 + AECCAR2 from the matching example dataset"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight",
+        "-ref",
+        "CHGCAR_sum"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na1Cl7_120",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "120x120x120",
+      "mean_Na_e": "0.00614800",
+      "Na_transfer_e_per_Na": "0.99385200",
+      "mean_Cl_e": "7.99385225",
+      "Cl_gain_e_per_Cl": "0.99385225",
+      "transfer_mismatch_e": "-0.00000025",
+      "sum_atomic_e": "32.00000100",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000300",
+      "atomic_CHARGE_tokens": [
+        "0.006148",
+        "0.006148",
+        "0.006148",
+        "0.006148",
+        "7.993853",
+        "7.993850",
+        "7.993853",
+        "7.993853"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    0.006148     0.496832     0.728227\n    2    1.421132    4.263395    1.421132    0.006148     0.496832     0.728217\n    3    1.421132    1.421132    4.263395    0.006148     0.496832     0.728223\n    4    4.263395    4.263395    4.263395    0.006148     0.496832     0.728233\n    5    1.421132    1.421132    1.421132    7.993853     1.942791    45.194013\n    6    4.263395    4.263395    1.421132    7.993850     1.942791    45.193968\n    7    4.263395    1.421132    4.263395    7.993853     1.961185    45.194040\n    8    1.421132    4.263395    4.263395    7.993853     1.942791    45.194002\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "90e75f014ff2ebc801ac1e3fd1706c713a1d123e65371999f1d2b9ac1925e722",
+      "inputs": {
+        "primary": {
+          "sha256": "a19d6fc380407d9331d421d143cbb59161d222045e04b499ad6b867c843328f3",
+          "path": "example/NaCl.VASP_Na1Cl7_120/CHGCAR"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.VASP_Na1Cl7_120",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "120x120x120",
+      "mean_Na_e": "0.16972225",
+      "Na_transfer_e_per_Na": "0.83027775",
+      "mean_Cl_e": "7.83027750",
+      "Cl_gain_e_per_Cl": "0.83027750",
+      "transfer_mismatch_e": "0.00000025",
+      "sum_atomic_e": "31.99999900",
+      "Na_range_e": "0.00000100",
+      "Cl_range_e": "0.00000300",
+      "atomic_CHARGE_tokens": [
+        "0.169722",
+        "0.169722",
+        "0.169723",
+        "0.169722",
+        "7.830279",
+        "7.830276",
+        "7.830277",
+        "7.830278"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    0.169722     1.136905     9.816045\n    2    1.421132    4.263395    1.421132    0.169722     1.136905     9.816044\n    3    1.421132    1.421132    4.263395    0.169723     1.136905     9.816045\n    4    4.263395    4.263395    4.263395    0.169722     1.136905     9.816044\n    5    1.421132    1.421132    1.421132    7.830279     1.657987    36.106194\n    6    4.263395    4.263395    1.421132    7.830276     1.657987    36.106180\n    7    4.263395    1.421132    4.263395    7.830277     1.657987    36.106175\n    8    1.421132    4.263395    4.263395    7.830278     1.657987    36.106196\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "0331bbb9580f86991bcdd65e545a44a117ec04690620abe1837b780951f4cd2f",
+      "inputs": {
+        "primary": {
+          "sha256": "a19d6fc380407d9331d421d143cbb59161d222045e04b499ad6b867c843328f3",
+          "path": "example/NaCl.VASP_Na1Cl7_120/CHGCAR"
+        },
+        "reference": {
+          "sha256": "d54042becdb8900e3600c0947c2c47a793894339e4985a07bec5537fe322e1a3",
+          "generated_filename": "CHGCAR_sum",
+          "construction": "AECCAR0 + AECCAR2 from the matching example dataset"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight",
+        "-ref",
+        "CHGCAR_sum"
+      ]
+    },
+    {
+      "dataset": "NaCl.SG15PBE",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "36x36x36",
+      "mean_Na_e": "8.11093500",
+      "Na_transfer_e_per_Na": "0.88906500",
+      "mean_Cl_e": "7.88898500",
+      "Cl_gain_e_per_Cl": "0.88898500",
+      "transfer_mismatch_e": "0.00008000",
+      "sum_atomic_e": "63.99968000",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "8.110935",
+        "8.110935",
+        "8.110935",
+        "8.110935",
+        "7.888985",
+        "7.888985",
+        "7.888985",
+        "7.888985"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    8.110935     1.910642    65.317266\n    2    2.685550    8.056649    2.685550    8.110935     1.910642    65.317266\n    3    2.685550    2.685550    8.056649    8.110935     1.910642    65.317266\n    4    8.056649    8.056649    8.056649    8.110935     1.910638    65.317266\n    5    2.685550    2.685550    2.685550    7.888985     2.983936   244.580018\n    6    8.056649    8.056649    2.685550    7.888985     2.983929   244.580018\n    7    8.056649    2.685550    8.056649    7.888985     2.983929   244.580018\n    8    2.685550    8.056649    8.056649    7.888985     2.983929   244.580018\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "05db875ca7bfbc8eefc28e6ad4d0a3da8ba64ef6e13f68b7bc74e092d63449ec",
+      "inputs": {
+        "primary": {
+          "sha256": "7c55d14d410caf94db4abbb157449b42e402470785f8f0dd05953d89e382e211",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.SG15PBE",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.SG15PBE",
+      "condition": "na_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "36x36x36",
+      "mean_Na_e": "8.11093500",
+      "Na_transfer_e_per_Na": "0.88906500",
+      "mean_Cl_e": "7.88898500",
+      "Cl_gain_e_per_Cl": "0.88898500",
+      "transfer_mismatch_e": "0.00008000",
+      "sum_atomic_e": "63.99968000",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "8.110935",
+        "8.110935",
+        "8.110935",
+        "8.110935",
+        "7.888985",
+        "7.888985",
+        "7.888985",
+        "7.888985"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    8.110935     1.910642    65.317266\n    2    2.685550    8.056649    2.685550    8.110935     1.910642    65.317266\n    3    2.685550    2.685550    8.056649    8.110935     1.910642    65.317266\n    4    8.056649    8.056649    8.056649    8.110935     1.910638    65.317266\n    5    2.685550    2.685550    2.685550    7.888985     2.983936   244.580018\n    6    8.056649    8.056649    2.685550    7.888985     2.983929   244.580018\n    7    8.056649    2.685550    8.056649    7.888985     2.983929   244.580018\n    8    2.685550    8.056649    8.056649    7.888985     2.983929   244.580018\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "05db875ca7bfbc8eefc28e6ad4d0a3da8ba64ef6e13f68b7bc74e092d63449ec",
+      "inputs": {
+        "primary": {
+          "sha256": "7c55d14d410caf94db4abbb157449b42e402470785f8f0dd05953d89e382e211",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.SG15PBE",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "2ee21b010851b9db516fd6e0510a06c99cd79eaa3a4342ea5e026ecade65185d",
+          "generated_filename": "rho.ref-na.cube",
+          "source_dataset": "NaCl.SG15PBE",
+          "construction": "valence density + Na atomic core density"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-na.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.SG15PBE",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "36x36x36",
+      "mean_Na_e": "8.11093500",
+      "Na_transfer_e_per_Na": "0.88906500",
+      "mean_Cl_e": "7.88898500",
+      "Cl_gain_e_per_Cl": "0.88898500",
+      "transfer_mismatch_e": "0.00008000",
+      "sum_atomic_e": "63.99968000",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "8.110935",
+        "8.110935",
+        "8.110935",
+        "8.110935",
+        "7.888985",
+        "7.888985",
+        "7.888985",
+        "7.888985"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    8.110935     1.910642    65.317252\n    2    2.685550    8.056649    2.685550    8.110935     1.910642    65.317252\n    3    2.685550    2.685550    8.056649    8.110935     1.910642    65.317252\n    4    8.056649    8.056649    8.056649    8.110935     1.910638    65.317252\n    5    2.685550    2.685550    2.685550    7.888985     2.983936   244.580031\n    6    8.056649    8.056649    2.685550    7.888985     2.983929   244.580031\n    7    8.056649    2.685550    8.056649    7.888985     2.983929   244.580031\n    8    2.685550    8.056649    8.056649    7.888985     2.983929   244.580031\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "b1d71c6d4d9fd4702962ee0e7b019fcac26ecbd423f424eefe8246547c453de3",
+      "inputs": {
+        "primary": {
+          "sha256": "7c55d14d410caf94db4abbb157449b42e402470785f8f0dd05953d89e382e211",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.SG15PBE",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "f4f2038b448abe043afc1c956d0efae78d2f8549b2e5536b88c2efc539b19e78",
+          "generated_filename": "rho.ref-nacl.cube",
+          "source_dataset": "NaCl.SG15PBE",
+          "construction": "valence density + Na and Cl atomic core densities"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-nacl.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.SG15PBE.SPIN2",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "36x36x36",
+      "mean_Na_e": "8.11105700",
+      "Na_transfer_e_per_Na": "0.88894300",
+      "mean_Cl_e": "7.88886400",
+      "Cl_gain_e_per_Cl": "0.88886400",
+      "transfer_mismatch_e": "0.00007900",
+      "sum_atomic_e": "63.99968400",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "8.111057",
+        "8.111057",
+        "8.111057",
+        "8.111057",
+        "7.888864",
+        "7.888864",
+        "7.888864",
+        "7.888864"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    8.111057     1.910642    65.324935\n    2    2.685550    8.056649    2.685550    8.111057     1.910642    65.324935\n    3    2.685550    2.685550    8.056649    8.111057     1.910642    65.324935\n    4    8.056649    8.056649    8.056649    8.111057     1.910638    65.324935\n    5    2.685550    2.685550    2.685550    7.888864     2.983936   244.572348\n    6    8.056649    8.056649    2.685550    7.888864     2.983929   244.572348\n    7    8.056649    2.685550    8.056649    7.888864     2.983929   244.572348\n    8    2.685550    8.056649    8.056649    7.888864     2.983929   244.572348\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "aa0edcb745361ccc87f09a3813e303fa33f3a1c13644b8adc52b912c1cd97bba",
+      "inputs": {
+        "primary": {
+          "sha256": "b81bdea4e915f65287edaa475820ef1eb4d4e8507ce3153810514b815a266d94",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.SG15PBE.SPIN2",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.SG15PBE.SPIN2",
+      "condition": "na_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "36x36x36",
+      "mean_Na_e": "8.11105700",
+      "Na_transfer_e_per_Na": "0.88894300",
+      "mean_Cl_e": "7.88886400",
+      "Cl_gain_e_per_Cl": "0.88886400",
+      "transfer_mismatch_e": "0.00007900",
+      "sum_atomic_e": "63.99968400",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "8.111057",
+        "8.111057",
+        "8.111057",
+        "8.111057",
+        "7.888864",
+        "7.888864",
+        "7.888864",
+        "7.888864"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    8.111057     1.910642    65.324935\n    2    2.685550    8.056649    2.685550    8.111057     1.910642    65.324935\n    3    2.685550    2.685550    8.056649    8.111057     1.910642    65.324935\n    4    8.056649    8.056649    8.056649    8.111057     1.910638    65.324935\n    5    2.685550    2.685550    2.685550    7.888864     2.983936   244.572348\n    6    8.056649    8.056649    2.685550    7.888864     2.983929   244.572348\n    7    8.056649    2.685550    8.056649    7.888864     2.983929   244.572348\n    8    2.685550    8.056649    8.056649    7.888864     2.983929   244.572348\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "aa0edcb745361ccc87f09a3813e303fa33f3a1c13644b8adc52b912c1cd97bba",
+      "inputs": {
+        "primary": {
+          "sha256": "b81bdea4e915f65287edaa475820ef1eb4d4e8507ce3153810514b815a266d94",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.SG15PBE.SPIN2",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "c43c4b087734a241838c2217162550f7fb17a931879c6f75c95220e42b7c1915",
+          "generated_filename": "rho.ref-na.cube",
+          "source_dataset": "NaCl.SG15PBE.SPIN2",
+          "construction": "valence density + Na atomic core density"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-na.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.SG15PBE.SPIN2",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 9,
+      "grid": "36x36x36",
+      "mean_Na_e": "8.11105700",
+      "Na_transfer_e_per_Na": "0.88894300",
+      "mean_Cl_e": "7.88886400",
+      "Cl_gain_e_per_Cl": "0.88886400",
+      "transfer_mismatch_e": "0.00007900",
+      "sum_atomic_e": "63.99968400",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "8.111057",
+        "8.111057",
+        "8.111057",
+        "8.111057",
+        "7.888864",
+        "7.888864",
+        "7.888864",
+        "7.888864"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    8.111057     1.910642    65.324935\n    2    2.685550    8.056649    2.685550    8.111057     1.910642    65.324935\n    3    2.685550    2.685550    8.056649    8.111057     1.910642    65.324935\n    4    8.056649    8.056649    8.056649    8.111057     1.910638    65.324935\n    5    2.685550    2.685550    2.685550    7.888864     2.983936   244.572348\n    6    8.056649    8.056649    2.685550    7.888864     2.983929   244.572348\n    7    8.056649    2.685550    8.056649    7.888864     2.983929   244.572348\n    8    2.685550    8.056649    8.056649    7.888864     2.983929   244.572348\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        63.9997\n",
+      "ACF_sha256": "aa0edcb745361ccc87f09a3813e303fa33f3a1c13644b8adc52b912c1cd97bba",
+      "inputs": {
+        "primary": {
+          "sha256": "b81bdea4e915f65287edaa475820ef1eb4d4e8507ce3153810514b815a266d94",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.SG15PBE.SPIN2",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "29e047001427fc98bbd2b53a6ef2c402c03d8bc7054ec85cf8f7c37ddc14bb61",
+          "generated_filename": "rho.ref-nacl.cube",
+          "source_dataset": "NaCl.SG15PBE.SPIN2",
+          "construction": "valence density + Na and Cl atomic core densities"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-nacl.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.zval1.SG15PBE",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.00000000",
+      "Na_transfer_e_per_Na": "1.00000000",
+      "mean_Cl_e": "7.99996500",
+      "Cl_gain_e_per_Cl": "0.99996500",
+      "transfer_mismatch_e": "0.00003500",
+      "sum_atomic_e": "31.99986000",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "0.000000",
+        "0.000000",
+        "0.000000",
+        "0.000000",
+        "7.999965",
+        "7.999965",
+        "7.999965",
+        "7.999965"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    0.000000     0.000000     0.000000\n    2    2.685550    8.056649    2.685550    0.000000     0.000000     0.000000\n    3    2.685550    2.685550    8.056649    0.000000     0.000000     0.000000\n    4    8.056649    8.056649    8.056649    0.000000     0.000000     0.000000\n    5    2.685550    2.685550    2.685550    7.999965     3.375937   309.897284\n    6    8.056649    8.056649    2.685550    7.999965     3.375927   309.897284\n    7    8.056649    2.685550    8.056649    7.999965     3.375932   309.897284\n    8    2.685550    8.056649    8.056649    7.999965     3.375932   309.897284\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        31.9999\n",
+      "ACF_sha256": "04b03e2f4e74cfb7c954d8877835cdf855f9c9d453d86555a99225390b4ca62f",
+      "inputs": {
+        "primary": {
+          "sha256": "51dde2696d7fad0bc2ac6b369e6276e7f62d5c62eeba7b0b06dd6082aa94ae37",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.zval1.SG15PBE",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.zval1.SG15PBE",
+      "condition": "na_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.14990700",
+      "Na_transfer_e_per_Na": "0.85009300",
+      "mean_Cl_e": "7.85005800",
+      "Cl_gain_e_per_Cl": "0.85005800",
+      "transfer_mismatch_e": "0.00003500",
+      "sum_atomic_e": "31.99986000",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "0.149907",
+        "0.149907",
+        "0.149907",
+        "0.149907",
+        "7.850058",
+        "7.850058",
+        "7.850058",
+        "7.850058"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    0.149907     1.910642    65.892646\n    2    2.685550    8.056649    2.685550    0.149907     1.910642    65.892646\n    3    2.685550    2.685550    8.056649    0.149907     1.910642    65.892646\n    4    8.056649    8.056649    8.056649    0.149907     1.910638    65.892646\n    5    2.685550    2.685550    2.685550    7.850058     2.983936   244.004638\n    6    8.056649    8.056649    2.685550    7.850058     2.983929   244.004638\n    7    8.056649    2.685550    8.056649    7.850058     2.983929   244.004638\n    8    2.685550    8.056649    8.056649    7.850058     2.983929   244.004638\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        31.9999\n",
+      "ACF_sha256": "22ee3a6650ed712b3cd3f3730355a4b8ecc8c5ecbe5d569328e8ee81ecc7b9fe",
+      "inputs": {
+        "primary": {
+          "sha256": "51dde2696d7fad0bc2ac6b369e6276e7f62d5c62eeba7b0b06dd6082aa94ae37",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.zval1.SG15PBE",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "a7c6722335074dee5ee1aca7b51c14b71d03aa87c934bc1f7fa638657733685d",
+          "generated_filename": "rho.ref-na.cube",
+          "source_dataset": "NaCl.zval1.SG15PBE",
+          "construction": "valence density + Na atomic core density"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-na.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.zval1.SG15PBE",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "PBE",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.14990700",
+      "Na_transfer_e_per_Na": "0.85009300",
+      "mean_Cl_e": "7.85005900",
+      "Cl_gain_e_per_Cl": "0.85005900",
+      "transfer_mismatch_e": "0.00003400",
+      "sum_atomic_e": "31.99986400",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "0.149907",
+        "0.149907",
+        "0.149907",
+        "0.149907",
+        "7.850059",
+        "7.850059",
+        "7.850059",
+        "7.850059"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    0.149907     1.910642    65.892632\n    2    2.685550    8.056649    2.685550    0.149907     1.910642    65.892632\n    3    2.685550    2.685550    8.056649    0.149907     1.910642    65.892632\n    4    8.056649    8.056649    8.056649    0.149907     1.910638    65.892632\n    5    2.685550    2.685550    2.685550    7.850059     2.983936   244.004651\n    6    8.056649    8.056649    2.685550    7.850059     2.983929   244.004651\n    7    8.056649    2.685550    8.056649    7.850059     2.983929   244.004651\n    8    2.685550    8.056649    8.056649    7.850059     2.983929   244.004651\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        31.9999\n",
+      "ACF_sha256": "e113855a3f6fc4e81a7224150b2ed7664e8656359c0f6835ec658d53a5487f94",
+      "inputs": {
+        "primary": {
+          "sha256": "51dde2696d7fad0bc2ac6b369e6276e7f62d5c62eeba7b0b06dd6082aa94ae37",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.zval1.SG15PBE",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "273b82eb447de3c0ec19f4b8dd652a042c8879d48ed19a1ab5392edf77e91a2e",
+          "generated_filename": "rho.ref-nacl.cube",
+          "source_dataset": "NaCl.zval1.SG15PBE",
+          "construction": "valence density + Na and Cl atomic core densities"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-nacl.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.FHILDA",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "LDA (SLA-PW input; LDA-PZ core approximation)",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.00000000",
+      "Na_transfer_e_per_Na": "1.00000000",
+      "mean_Cl_e": "7.99999300",
+      "Cl_gain_e_per_Cl": "0.99999300",
+      "transfer_mismatch_e": "0.00000700",
+      "sum_atomic_e": "31.99997200",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "0.000000",
+        "0.000000",
+        "0.000000",
+        "0.000000",
+        "7.999993",
+        "7.999993",
+        "7.999993",
+        "7.999993"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    0.000000     0.000000     0.000000\n    2    2.685550    8.056649    2.685550    0.000000     0.000000     0.000000\n    3    2.685550    2.685550    8.056649    0.000000     0.000000     0.000000\n    4    8.056649    8.056649    8.056649    0.000000     0.000000     0.000000\n    5    2.685550    2.685550    2.685550    7.999993     3.375937   309.897284\n    6    8.056649    8.056649    2.685550    7.999993     3.375927   309.897284\n    7    8.056649    2.685550    8.056649    7.999993     3.375932   309.897284\n    8    2.685550    8.056649    8.056649    7.999993     3.375932   309.897284\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "73b310c65bb59c6c3ebf37c1fe3633d2ccd30d3d62b09f2e3b243e95710d961d",
+      "inputs": {
+        "primary": {
+          "sha256": "cc834168f8330b7baca89ae1d151718325ad87e49f5fc9f0931ad37ea9a4fe60",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.FHILDA",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "NaCl.FHILDA",
+      "condition": "na_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "LDA (SLA-PW input; LDA-PZ core approximation)",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.15773700",
+      "Na_transfer_e_per_Na": "0.84226300",
+      "mean_Cl_e": "7.84225700",
+      "Cl_gain_e_per_Cl": "0.84225700",
+      "transfer_mismatch_e": "0.00000600",
+      "sum_atomic_e": "31.99997600",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "0.157737",
+        "0.157737",
+        "0.157737",
+        "0.157737",
+        "7.842257",
+        "7.842257",
+        "7.842257",
+        "7.842257"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    0.157737     1.910642    65.760135\n    2    2.685550    8.056649    2.685550    0.157737     1.910642    65.760135\n    3    2.685550    2.685550    8.056649    0.157737     1.910642    65.760135\n    4    8.056649    8.056649    8.056649    0.157737     1.910638    65.760135\n    5    2.685550    2.685550    2.685550    7.842257     2.983936   244.137149\n    6    8.056649    8.056649    2.685550    7.842257     2.983929   244.137149\n    7    8.056649    2.685550    8.056649    7.842257     2.983929   244.137149\n    8    2.685550    8.056649    8.056649    7.842257     2.983929   244.137149\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "85cbc8007735c26112d7fb05cc1d1c84995433adba99448eee947fb4f4c3bf55",
+      "inputs": {
+        "primary": {
+          "sha256": "cc834168f8330b7baca89ae1d151718325ad87e49f5fc9f0931ad37ea9a4fe60",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.FHILDA",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "cbebee5ef81ffa72edbd5a5102cb67d3eca23732ae169ddc0954dd8394e3941e",
+          "generated_filename": "rho.ref-na.cube",
+          "source_dataset": "NaCl.FHILDA",
+          "construction": "valence density + Na atomic core density"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-na.cube"
+      ]
+    },
+    {
+      "dataset": "NaCl.FHILDA",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "PWmat",
+      "functional": "LDA (SLA-PW input; LDA-PZ core approximation)",
+      "zval_Na": 1,
+      "grid": "36x36x36",
+      "mean_Na_e": "0.15773700",
+      "Na_transfer_e_per_Na": "0.84226300",
+      "mean_Cl_e": "7.84225700",
+      "Cl_gain_e_per_Cl": "0.84225700",
+      "transfer_mismatch_e": "0.00000600",
+      "sum_atomic_e": "31.99997600",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000000",
+      "atomic_CHARGE_tokens": [
+        "0.157737",
+        "0.157737",
+        "0.157737",
+        "0.157737",
+        "7.842257",
+        "7.842257",
+        "7.842257",
+        "7.842257"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    8.056649    2.685550    2.685550    0.157737     1.910642    65.760135\n    2    2.685550    8.056649    2.685550    0.157737     1.910642    65.760135\n    3    2.685550    2.685550    8.056649    0.157737     1.910642    65.760135\n    4    8.056649    8.056649    8.056649    0.157737     1.910638    65.760135\n    5    2.685550    2.685550    2.685550    7.842257     2.983936   244.137149\n    6    8.056649    8.056649    2.685550    7.842257     2.983929   244.137149\n    7    8.056649    2.685550    8.056649    7.842257     2.983929   244.137149\n    8    2.685550    8.056649    8.056649    7.842257     2.983929   244.137149\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "85cbc8007735c26112d7fb05cc1d1c84995433adba99448eee947fb4f4c3bf55",
+      "inputs": {
+        "primary": {
+          "sha256": "cc834168f8330b7baca89ae1d151718325ad87e49f5fc9f0931ad37ea9a4fe60",
+          "generated_filename": "rho.cube",
+          "source_dataset": "NaCl.FHILDA",
+          "construction": "convert_rho2cube.x: original valence density"
+        },
+        "reference": {
+          "sha256": "667dd8cd3bd90a42eab3636e84b84ac3fa9a0a1f399c7172c83f0670dce73e62",
+          "generated_filename": "rho.ref-nacl.cube",
+          "source_dataset": "NaCl.FHILDA",
+          "construction": "valence density + Na and Cl atomic core densities"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "rho.cube",
+        "-b",
+        "weight",
+        "-ref",
+        "rho.ref-nacl.cube"
+      ]
+    },
+    {
+      "dataset": "Henkelman-Na9",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "input not provided",
+      "zval_Na": 9,
+      "grid": "160x160x160",
+      "mean_Na_e": "8.12646900",
+      "Na_transfer_e_per_Na": "0.87353100",
+      "mean_Cl_e": "7.87353025",
+      "Cl_gain_e_per_Cl": "0.87353025",
+      "transfer_mismatch_e": "0.00000075",
+      "sum_atomic_e": "63.99999700",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000100",
+      "atomic_CHARGE_tokens": [
+        "8.126469",
+        "8.126469",
+        "8.126469",
+        "8.126469",
+        "7.873530",
+        "7.873530",
+        "7.873531",
+        "7.873530"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    8.126469     1.136905     9.614878\n    2    1.421132    4.263395    1.421132    8.126469     1.136905     9.614876\n    3    1.421132    1.421132    4.263395    8.126469     1.136905     9.614878\n    4    4.263395    4.263395    4.263395    8.126469     1.136905     9.614878\n    5    1.421132    1.421132    1.421132    7.873530     1.669830    36.307352\n    6    4.263395    4.263395    1.421132    7.873530     1.669830    36.307352\n    7    4.263395    1.421132    4.263395    7.873531     1.669830    36.307356\n    8    1.421132    4.263395    4.263395    7.873530     1.669830    36.307353\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        64.0000\n",
+      "ACF_sha256": "a840aa4da88c652994cfbb87f53522f1557d416b9199863785843815bf2b0303",
+      "inputs": {
+        "primary": {
+          "sha256": "a8c9dd1c662e7c37bff5112761fe6013031c88cbdf715ef0d4320de41f35dd94",
+          "archive_url": "https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl.tar.gz",
+          "archive_member": "NaCl/CHG_NaCl"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHG_NaCl",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "Henkelman-Na1",
+      "condition": "direct",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PW91",
+      "zval_Na": 1,
+      "grid": "120x120x120",
+      "mean_Na_e": "0.00014700",
+      "Na_transfer_e_per_Na": "0.99985300",
+      "mean_Cl_e": "7.99985275",
+      "Cl_gain_e_per_Cl": "0.99985275",
+      "transfer_mismatch_e": "0.00000025",
+      "sum_atomic_e": "31.99999900",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000100",
+      "atomic_CHARGE_tokens": [
+        "0.000147",
+        "0.000147",
+        "0.000147",
+        "0.000147",
+        "7.999853",
+        "7.999853",
+        "7.999853",
+        "7.999852"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    0.000147     0.142113     0.037196\n    2    1.421132    4.263395    1.421132    0.000147     0.142113     0.037196\n    3    1.421132    1.421132    4.263395    0.000147     0.142113     0.037196\n    4    4.263395    4.263395    4.263395    0.000147     0.142113     0.037196\n    5    1.421132    1.421132    1.421132    7.999853     1.942791    45.885043\n    6    4.263395    4.263395    1.421132    7.999853     1.942791    45.885038\n    7    4.263395    1.421132    4.263395    7.999853     1.942791    45.885040\n    8    1.421132    4.263395    4.263395    7.999852     1.942791    45.885018\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "bd1836c6527fa85b44222a7d546d87542bc1d0a56d9f8dbad9aa09f783c40f9f",
+      "inputs": {
+        "primary": {
+          "sha256": "59986883706fa0757373666964e51d6ce5e6daff7b671e03a184ee8ee5fbd485",
+          "archive_url": "https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl_wcore.tar.gz",
+          "archive_member": "NaCl_wcore/CHGCAR"
+        },
+        "reference": null
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight"
+      ]
+    },
+    {
+      "dataset": "Henkelman-Na1",
+      "condition": "nacl_ref",
+      "algorithm": "weight",
+      "program": "VASP",
+      "functional": "PW91",
+      "zval_Na": 1,
+      "grid": "120x120x120",
+      "mean_Na_e": "0.17238100",
+      "Na_transfer_e_per_Na": "0.82761900",
+      "mean_Cl_e": "7.82761875",
+      "Cl_gain_e_per_Cl": "0.82761875",
+      "transfer_mismatch_e": "0.00000025",
+      "sum_atomic_e": "31.99999900",
+      "Na_range_e": "0.00000000",
+      "Cl_range_e": "0.00000100",
+      "atomic_CHARGE_tokens": [
+        "0.172381",
+        "0.172381",
+        "0.172381",
+        "0.172381",
+        "7.827619",
+        "7.827619",
+        "7.827619",
+        "7.827618"
+      ],
+      "ACF_dat": "    #         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL\n --------------------------------------------------------------------------------\n    1    4.263395    1.421132    1.421132    0.172381     1.136905     9.778649\n    2    1.421132    4.263395    1.421132    0.172381     1.136905     9.778648\n    3    1.421132    1.421132    4.263395    0.172381     1.136905     9.778648\n    4    4.263395    4.263395    4.263395    0.172381     1.136905     9.778649\n    5    1.421132    1.421132    1.421132    7.827619     1.657987    36.143584\n    6    4.263395    4.263395    1.421132    7.827619     1.657987    36.143582\n    7    4.263395    1.421132    4.263395    7.827619     1.657987    36.143583\n    8    1.421132    4.263395    4.263395    7.827618     1.657987    36.143580\n --------------------------------------------------------------------------------\n    VACUUM CHARGE:               0.0000\n    VACUUM VOLUME:               0.0000\n    NUMBER OF ELECTRONS:        32.0000\n",
+      "ACF_sha256": "4dc7496284d8ba61e53d9b56d3cc4aded71fbd061204f2d27c2232957f3f37f6",
+      "inputs": {
+        "primary": {
+          "sha256": "59986883706fa0757373666964e51d6ce5e6daff7b671e03a184ee8ee5fbd485",
+          "archive_url": "https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl_wcore.tar.gz",
+          "archive_member": "NaCl_wcore/CHGCAR"
+        },
+        "reference": {
+          "sha256": "375173ef6878a7a243c00843b0da0da1b2cf47762e11ee8db8397049d9d4c6f8",
+          "archive_url": "https://theory.cm.utexas.edu/henkelman/code/bader/download/NaCl_wcore.tar.gz",
+          "archive_member": "NaCl_wcore/CHGCAR_sum"
+        }
+      },
+      "analysis_command_template": [
+        "bader",
+        "CHGCAR",
+        "-b",
+        "weight",
+        "-ref",
+        "CHGCAR_sum"
+      ]
+    }
+  ],
+  "path_figures": {
+    "description": "Charge-density figures independent of the Bader partition algorithm; each density series contains 19 actual grid points.",
+    "datasets": {
+      "material_3": "NaCl.SG15PBE",
+      "material_4": "NaCl.zval1.SG15PBE"
+    },
+    "checks": {
+      "yscale": "linear",
+      "ylim": [
+        0,
+        0.4
+      ],
+      "core_markers": false,
+      "cube_interpolation": false,
+      "radial_resampling": false,
+      "materials": [
+        {
+          "material": 3,
+          "distance_bohr": 5.371099162108898,
+          "points": 19,
+          "na_atom_index_one_based": 1,
+          "cl_atom_index_one_based": 5,
+          "cl_image_translation": [
+            1,
+            0,
+            0
+          ],
+          "cube_header_max_lattice_roundoff_bohr": 1.4324217795902427e-05,
+          "cube_density_minmax": [
+            0.011203,
+            1.656
+          ],
+          "reference_density_minmax": [
+            0.011203,
+            3609.2
+          ],
+          "grid_points_clipped_above_0_4": {
+            "valence": 4,
+            "reference": 7
+          },
+          "core_lines": [
+            {
+              "tag": "Na9-PBE",
+              "source_rows": 1778,
+              "plotted_rows": 1778,
+              "rows_above_ylim": 1501
+            },
+            {
+              "tag": "Cl-PBE",
+              "source_rows": 2038,
+              "plotted_rows": 2026,
+              "rows_above_ylim": 1701
+            }
+          ],
+          "construction_cutoffs": {
+            "Na": [
+              {
+                "l": 0,
+                "channel": "s",
+                "core_occupancy": 2,
+                "configuration_label": "1̲s̲²̲ 2s² 3s¹",
+                "state": "bound",
+                "rc_bohr": 1.48,
+                "rc_text": "1.48"
+              },
+              {
+                "l": 1,
+                "channel": "p",
+                "core_occupancy": 0,
+                "configuration_label": "2p⁶",
+                "state": "bound",
+                "rc_bohr": 2.3,
+                "rc_text": "2.30"
+              }
+            ],
+            "Cl": [
+              {
+                "l": 0,
+                "channel": "s",
+                "core_occupancy": 4,
+                "configuration_label": "1̲s̲²̲ 2̲s̲²̲ 3s²",
+                "state": "bound",
+                "rc_bohr": 3.22968,
+                "rc_text": "3.22968"
+              },
+              {
+                "l": 1,
+                "channel": "p",
+                "core_occupancy": 6,
+                "configuration_label": "2̲p̲⁶̲ 3p⁵",
+                "state": "bound",
+                "rc_bohr": 1.61693,
+                "rc_text": "1.61693"
+              }
+            ]
+          },
+          "overlapping_channel_pairs": [
+            "Na p / Cl s"
+          ],
+          "overlapping_core_contributing_channel_pairs": []
+        },
+        {
+          "material": 4,
+          "distance_bohr": 5.371099162108898,
+          "points": 19,
+          "na_atom_index_one_based": 1,
+          "cl_atom_index_one_based": 5,
+          "cl_image_translation": [
+            1,
+            0,
+            0
+          ],
+          "cube_header_max_lattice_roundoff_bohr": 1.4324217795902427e-05,
+          "cube_density_minmax": [
+            0.00025879,
+            0.26429
+          ],
+          "reference_density_minmax": [
+            0.011514,
+            3609.2
+          ],
+          "grid_points_clipped_above_0_4": {
+            "valence": 0,
+            "reference": 7
+          },
+          "core_lines": [
+            {
+              "tag": "Na1-PBE",
+              "source_rows": 2054,
+              "plotted_rows": 1953,
+              "rows_above_ylim": 1673
+            },
+            {
+              "tag": "Cl-PBE",
+              "source_rows": 2038,
+              "plotted_rows": 2026,
+              "rows_above_ylim": 1701
+            }
+          ],
+          "construction_cutoffs": {
+            "Na": [
+              {
+                "l": 0,
+                "channel": "s",
+                "core_occupancy": 4,
+                "configuration_label": "1̲s̲²̲ 2̲s̲²̲ 3s¹",
+                "state": "bound",
+                "rc_bohr": 3.0,
+                "rc_text": "3.00000"
+              },
+              {
+                "l": 1,
+                "channel": "p",
+                "core_occupancy": 6,
+                "configuration_label": "2̲p̲⁶̲ p⁰",
+                "state": "scattering",
+                "rc_bohr": 3.0,
+                "rc_text": "3.00000"
+              },
+              {
+                "l": 2,
+                "channel": "d",
+                "core_occupancy": 0,
+                "configuration_label": "d⁰",
+                "state": "scattering",
+                "rc_bohr": 2.5,
+                "rc_text": "2.50000"
+              }
+            ],
+            "Cl": [
+              {
+                "l": 0,
+                "channel": "s",
+                "core_occupancy": 4,
+                "configuration_label": "1̲s̲²̲ 2̲s̲²̲ 3s²",
+                "state": "bound",
+                "rc_bohr": 3.22968,
+                "rc_text": "3.22968"
+              },
+              {
+                "l": 1,
+                "channel": "p",
+                "core_occupancy": 6,
+                "configuration_label": "2̲p̲⁶̲ 3p⁵",
+                "state": "bound",
+                "rc_bohr": 1.61693,
+                "rc_text": "1.61693"
+              }
+            ]
+          },
+          "overlapping_channel_pairs": [
+            "Na s / Cl s",
+            "Na p / Cl s",
+            "Na d / Cl s"
+          ],
+          "overlapping_core_contributing_channel_pairs": [
+            "Na s / Cl s",
+            "Na p / Cl s"
+          ]
+        }
+      ]
+    },
+    "published_files": [
+      {
+        "path": "assets/NaCl-path-PBE-Na9.png",
+        "sha256": "6018cb3aa157dace635457557f7f67de1f94c4de20028c3a96364528ae11f088"
+      },
+      {
+        "path": "assets/NaCl-path-PBE-Na1.png",
+        "sha256": "33913f337e0fb555114ab898eb99b3ee3c6d50cdf31a6206a86e9360ca9eb8db"
+      },
+      {
+        "path": "assets/NaCl-path-PBE-comparison.png",
+        "sha256": "dab61bcaa1ea0b7e6ef645408da9d12bd6a439524517e1796960de57453ebb94"
+      },
+      {
+        "path": "note/data/NaCl-path-Na9.csv",
+        "sha256": "9c7da347baffb99f86e8620f618ecae27757e2bf11c6db2ce2758faa85150b3b"
+      },
+      {
+        "path": "note/data/NaCl-path-Na1.csv",
+        "sha256": "bf4063e0d897b4301cfae94898b2ee97b1112665c5fac36ac9ab742175d73004"
+      },
+      {
+        "path": "note/data/plot_NaCl_paths.py",
+        "sha256": "f9efe98de430006bf79b888e3ea471c6c11d229540293d6ee3780afa18042c4c"
+      },
+      {
+        "path": "note/data/NaCl-core-Na9.csv",
+        "sha256": "50766afaa6727e947a34c12035af2930d2c359d5928f7f33f57ec3dd692f0f65"
+      },
+      {
+        "path": "note/data/NaCl-core-Na1.csv",
+        "sha256": "84fae0459098153b2a40a55699c1234959d68c12bf0d80f1f43887bfb9271b5c"
+      },
+      {
+        "path": "note/data/NaCl-core-Cl.csv",
+        "sha256": "09ba5608e9120190f74a5c2790276e2aeb509e79e71ee92eb7d176d84d61aca3"
+      }
+    ],
+    "plotting": {
+      "script": "note/data/plot_NaCl_paths.py",
+      "command": "python note/data/plot_NaCl_paths.py",
+      "dependencies": [
+        "Python 3",
+        "NumPy",
+        "Matplotlib"
+      ],
+      "core_tables": [
+        {
+          "path": "note/data/NaCl-core-Na9.csv",
+          "source_corecharge_sha256": "fc3f6470679c796d18fd2e7e3ba95b5ce16cdd388de1f60dafbbb9eaf1802156",
+          "columns": [
+            "r_bohr",
+            "rho_core_e_per_bohr3"
+          ]
+        },
+        {
+          "path": "note/data/NaCl-core-Na1.csv",
+          "source_corecharge_sha256": "4eb7186074935b2736809f7ff48f0c60123abbc88e215ca8f82d36d1fe00f160",
+          "columns": [
+            "r_bohr",
+            "rho_core_e_per_bohr3"
+          ]
+        },
+        {
+          "path": "note/data/NaCl-core-Cl.csv",
+          "source_corecharge_sha256": "ae9153583d4d90b361b37bcba4cba72f59a919e8c6c435667b3986b3dea95c4b",
+          "columns": [
+            "r_bohr",
+            "rho_core_e_per_bohr3"
+          ]
+        }
+      ],
+      "colors": {
+        "valence": "#4d4d4d",
+        "reference": "#0072b2",
+        "Na_core": "#009e73",
+        "Cl_core": "#e69f00"
+      },
+      "comparison_markers": {
+        "Na9": "open circle",
+        "Na1": "cross"
+      },
+      "notes": "Original path values and radial table rows are preserved; no interpolation or density gradients are computed. Construction-radius annotations list frozen-core and occupied-valence configurations, plus zero-occupancy scattering reference states. Underlined subshells belong to the frozen core. Solid leaders indicate channels that contribute to the core density; dashed leaders indicate channels that do not."
+    }
+  }
+}

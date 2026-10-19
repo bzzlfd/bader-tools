@@ -52,8 +52,8 @@ Henkelman 课题组的 `bader` examples 中有两个 NaCl 算例：`NaCl.tar.gz`
 - 【材料 2｜Henkelman Na1】官方 `NaCl_wcore.tar.gz`；
 - 【材料 3｜PWmat PBE Na9】`example/NaCl.SG15PBE/`；
 - 【材料 4｜PWmat PBE Na1】`example/NaCl.zval1.SG15PBE/`；
-- 【材料 5｜VASP PBE Na9】`example/NaCl.VASP_Na9Cl7/`；
-- 【材料 6｜VASP PBE Na1】`example/NaCl.VASP_Na1Cl7/`；
+- 【材料 5｜VASP PBE Na9】`example/NaCl.VASP_Na9Cl7_48/`；
+- 【材料 6｜VASP PBE Na1】`example/NaCl.VASP_Na1Cl7_36/`；
 - 【材料 7｜PWmat LDA Na1】`example/NaCl.FHILDA/`；
 - 【材料 8｜PWmat PBE Na9 SPIN2】`example/NaCl.SG15PBE.SPIN2/`。
 
@@ -138,8 +138,8 @@ $\Delta q>0$ 表示 Na 向 Cl 转移电子。须用 Cl 的平均得电子量交�
 | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: |
 | 【材料 1｜Henkelman Na9】 | `NaCl.tar.gz` 中的 `NaCl/CHG_NaCl` | VASP | 待核实 | 9 | 待读取 | 待填写 | 不适用 | 不适用 |
 | 【材料 2｜Henkelman Na1】 | `NaCl_wcore.tar.gz` 中的 `NaCl_wcore/CHGCAR` | VASP | 待核实 | 1 | 待读取 | 待填写 | 不适用 | 待填写 |
-| 【材料 5｜VASP PBE Na9】 | `example/NaCl.VASP_Na9Cl7/CHGCAR` | VASP | PBE | 9 | 待读取 | 待填写 | 不适用 | 待填写 |
-| 【材料 6｜VASP PBE Na1】 | `example/NaCl.VASP_Na1Cl7/CHGCAR` | VASP | PBE | 1 | 待读取 | 待填写 | 不适用 | 待填写 |
+| 【材料 5｜VASP PBE Na9】 | `example/NaCl.VASP_Na9Cl7_48/CHGCAR` | VASP | PBE | 9 | 待读取 | 待填写 | 不适用 | 待填写 |
+| 【材料 6｜VASP PBE Na1】 | `example/NaCl.VASP_Na1Cl7_36/CHGCAR` | VASP | PBE | 1 | 待读取 | 待填写 | 不适用 | 待填写 |
 | 【材料 3｜PWmat PBE Na9】 | `example/NaCl.SG15PBE/OUT.RHO` | PWmat | PBE | 9 | 待读取 | 待填写 | 待填写 | 待填写 |
 | 【材料 8｜PWmat PBE Na9 SPIN2】 | `example/NaCl.SG15PBE.SPIN2/OUT.RHO`、`OUT.RHO_2` | PWmat | PBE | 9 | 待读取 | 待填写 | 待填写 | 待填写 |
 | 【材料 4｜PWmat PBE Na1】 | `example/NaCl.zval1.SG15PBE/OUT.RHO` | PWmat | PBE | 1 | 待读取 | 待填写 | 待填写 | 待填写 |

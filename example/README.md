@@ -1,18 +1,37 @@
-# PWmat 示例数据
+# NaCl 示例数据
 
-本目录提供四组 NaCl 计算数据，用于演示和检查 `OUT.RHO` 到 Gaussian
-cube 的转换：
+本目录包含四组 PWmat 数据和四组自算 VASP PBE 数据。计算方法、电荷转移结果及分析见 [NaCl 实验笔记](../note/NaCl-experiment.md)。
 
-| 目录 | 赝势与计算设置 | 电荷密度文件 |
-| --- | --- | --- |
-| `NaCl.FHILDA/` | FHI LDA；Na 取 1 个、Cl 取 7 个价电子 | `OUT.RHO` |
-| `NaCl.SG15PBE/` | SG15 PBE；Na 取 9 个、Cl 取 7 个价电子 | `OUT.RHO` |
-| `NaCl.SG15PBE.SPIN2/` | SG15 PBE，共线自旋极化 | `OUT.RHO`、`OUT.RHO_2` |
-| `NaCl.zval1.SG15PBE/` | PBE；Na 取 1 个、Cl 取 7 个价电子 | `OUT.RHO` |
+## PWmat
 
-每个目录同时保留生成该密度时使用的 `atom.config`、`etot.input` 和
-UPF 赝势，便于核对结构、计算设置及价电子数。`OUT.RHO` 是 PWmat
-二进制文件，不适合作为文本查看。
+| 目录 | 赝势与计算设置 | 网格 | 电荷密度文件 |
+| --- | --- | --- | --- |
+| `NaCl.FHILDA/` | FHI LDA；Na 1、Cl 7 个价电子 | 36³ | `OUT.RHO` |
+| `NaCl.SG15PBE/` | SG15 PBE；Na 9、Cl 7 个价电子 | 36³ | `OUT.RHO` |
+| `NaCl.SG15PBE.SPIN2/` | SG15 PBE；Na 9、Cl 7；共线自旋极化 | 36³ | `OUT.RHO`、`OUT.RHO_2` |
+| `NaCl.zval1.SG15PBE/` | PBE；Na 1、Cl 7 个价电子 | 36³ | `OUT.RHO` |
 
-`etot.input` 记录的是原始计算环境，其中 `IN.PSP*` 使用原有的上级目录
-相对路径。若要重新运行 PWmat 计算，需要先根据当前文件位置调整这些路径。
+每组同时保留 `atom.config`、`etot.input` 和 UPF 赝势。`OUT.RHO` 是 Fortran 二进制文件；自旋极化数据的两个文件分别保存两个自旋通道的电荷密度。
+
+`etot.input` 记录原始计算设置，其中 `IN.PSP*` 使用原有上级目录相对路径。
+
+## VASP
+
+| 目录 | Na 价电子数 | 电荷密度网格 | 说明 |
+| --- | ---: | --- | --- |
+| `NaCl.VASP_Na9Cl7_48/` | 9 | 48³ | 默认稀疏网格 |
+| `NaCl.VASP_Na9Cl7_160/` | 9 | 160³ | 密网格，仅保留计算输入 |
+| `NaCl.VASP_Na1Cl7_36/` | 1 | 36³ | 默认稀疏网格 |
+| `NaCl.VASP_Na1Cl7_120/` | 1 | 120³ | 密网格，仅保留计算输入 |
+
+四组均为 VASP 5.4.4、PBE、`ISPIN=2`，使用同一八原子晶胞（4 个 Na、4 个 Cl）和 4×4×4 Monkhorst–Pack k 点网格。Na9、Na1 的平面波截断能分别为 645.6 eV、262.5 eV。
+
+两组默认稀疏网格数据包含：
+
+- `CHGCAR`：原始价电子电荷密度；
+- `AECCAR0`、`AECCAR2`：芯密度和重构的全电子价密度；
+- `INCAR`、`KPOINTS`、`POSCAR`：计算设置、k 点和原始结构。
+
+两组密网格目录仅保留 `INCAR`、`KPOINTS`、`POSCAR`；体积较大的 `CHGCAR`、`AECCAR0`、`AECCAR2` 不纳入仓库。相应分析结果仍记录在[实验笔记](../note/NaCl-experiment.md)及其数据文件中。
+
+VASP 目录后缀表示电荷密度网格的单边格点数。所用 PBE PAW 数据集分别为 Na9 的 `Na_sv`、Na1 的 `Na`，以及两组共用的 `Cl`；Cl 均有 7 个价电子。目录中未附 `POTCAR`，具体赝势标签和文件哈希见[数据记录](../note/data/NaCl-weight-results.json)。

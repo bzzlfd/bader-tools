@@ -1,3 +1,11 @@
 .agents
 .codex
 .aws
+
+# Large VASP density outputs; keep only the corresponding calculation inputs.
+/example/NaCl.VASP_Na9Cl7_160/CHGCAR
+/example/NaCl.VASP_Na9Cl7_160/AECCAR0
+/example/NaCl.VASP_Na9Cl7_160/AECCAR2
+/example/NaCl.VASP_Na1Cl7_120/CHGCAR
+/example/NaCl.VASP_Na1Cl7_120/AECCAR0
+/example/NaCl.VASP_Na1Cl7_120/AECCAR2
