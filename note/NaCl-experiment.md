@@ -141,7 +141,7 @@ VASP 最后一列以 `AECCAR0 + AECCAR2` 作为参考密度，PWmat 则以价电
 
 2. **Na1 的芯密度会影响 Bader 划分。** Na1 的芯包含较为延展的 $2s$、$2p$ 电子。加入 Na 芯密度后，Na 一侧乃至原子间区域的参考密度明显升高，边界附近的密度分布也随之改变。这与 Na1 加入参考密度后电荷转移量显著下降的结果一致。相比之下，Cl 的芯电子分布高度局域，在原子间边界附近的贡献可以忽略。因此，仅加入 Na 芯密度与同时加入 Na、Cl 芯密度所得的修正结果几乎相同。
 
-3. **Na9 和 Na1 中两原子的芯区均有交叠。** Na9 的 Na $2p^6$ 与 Cl $3s^2$ 通道芯区发生交叠，Na1 的 Na $3s^1$ 与 Cl $3s^2$ 通道芯区也有明显交叠。
+3. **Na9 和 Na1 中两原子的芯区均有交叠。** Na9 的 Na $2p^6$ 与 Cl $3s^2$ 通道芯区发生交叠，Na1 的 Na $3s^1$ 与 Cl $3s^2$ 通道芯区也有明显交叠。[^pd04-core-region]
 
 4. **“芯区很小且互不交叠”的假设不成立。** 上述交叠表明，[芯密度参考笔记](core-rho-correction.md)中“芯区足够小，不会侵入成键区域”的假设并不成立，因此其中提出的两种处理方法都需要重新审视。
 
@@ -155,6 +155,8 @@ VASP 最后一列以 `AECCAR0 + AECCAR2` 作为参考密度，PWmat 则以价电
       $$
 
       一般不再等于 $\delta_{mn}$。因此，该公式既没有保证重构轨道正交，也不能直接据此把重构密度写成这些轨道模方的简单求和；还需要一套能够正确处理交叉项和轨道交叠关系的完整重构方法。
+
+[^pd04-core-region]: 这一结论针对本文采用的 SG15 赝势，并非所有 NCPP 都会出现芯区交叠。作为对照，PseudoDojo PD04 PBE 标量相对论的 [standard](https://github.com/PseudoDojo/ONCVPSP-PBE-PDv0.4/blob/master/standard.txt) 和 [stringent](https://github.com/PseudoDojo/ONCVPSP-PBE-PDv0.4/blob/master/stringent.txt) 表均选用 [`Na-sp`](https://github.com/PseudoDojo/ONCVPSP-PBE-PDv0.4/blob/master/Na/Na-sp.in) 与 [`Cl`](https://github.com/PseudoDojo/ONCVPSP-PBE-PDv0.4/blob/master/Cl/Cl.in) 赝势；其最大占据态截断半径之和为 3.10 bohr，小于 5.371 bohr 的 Na—Cl 最近邻距离，因此没有芯区交叠。
 
 ## 数据与复现
 
