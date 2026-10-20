@@ -1628,11 +1628,11 @@
     "published_files": [
       {
         "path": "assets/NaCl-path-PBE-Na9.png",
-        "sha256": "6018cb3aa157dace635457557f7f67de1f94c4de20028c3a96364528ae11f088"
+        "sha256": "d2b9412ec9123c1a82b74873c4456560298de322816ba6580b0cd523b1e78f6b"
       },
       {
         "path": "assets/NaCl-path-PBE-Na1.png",
-        "sha256": "33913f337e0fb555114ab898eb99b3ee3c6d50cdf31a6206a86e9360ca9eb8db"
+        "sha256": "66a91d5231e2a9743cc9e32abd4cd5cd4ff1c22e124201944af7da9ed289aa50"
       },
       {
         "path": "assets/NaCl-path-PBE-comparison.png",
@@ -1648,7 +1648,7 @@
       },
       {
         "path": "note/data/plot_NaCl_paths.py",
-        "sha256": "f9efe98de430006bf79b888e3ea471c6c11d229540293d6ee3780afa18042c4c"
+        "sha256": "d39f5709c063db830b27018fd8d8d92b9597226ade2409b7a4888f793315eb94"
       },
       {
         "path": "note/data/NaCl-core-Na9.csv",

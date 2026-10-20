@@ -42,7 +42,8 @@ def radius_band(ax, distance, radii):
             by_radius.setdefault(row['rc_bohr'], []).append(row)
         for radius, rows in by_radius.items():
             target = radius if element == 'Na' else distance - radius
-            linestyle = '-' if any(row['core_occupancy'] > 0 for row in rows) else '--'
+            linestyle = '--' if all(row['state'] == 'scattering'
+                                    for row in rows) else '-'
             ax.vlines(target, .015, .25, colors=color, lw=1.4,
                       linestyles=linestyle)
         for i, row in enumerate(radii[element]):
@@ -50,7 +51,9 @@ def radius_band(ax, distance, radii):
             target = radius if element == 'Na' else distance - radius
             label = (f"{element} {row['configuration_label']}: "
                      f"$r_c$ = {radius:g} bohr")
-            linestyle = '-' if row['core_occupancy'] > 0 else '--'
+            if row['state'] not in {'bound', 'scattering'}:
+                raise ValueError(f"Unknown pseudowave state: {row['state']}")
+            linestyle = '--' if row['state'] == 'scattering' else '-'
             ax.annotate(label, xy=(target, .25), xycoords='data',
                         xytext=(.015 if element == 'Na' else .985, .91-i*.32),
                         textcoords='axes fraction', va='center',
